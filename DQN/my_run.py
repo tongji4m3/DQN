@@ -1,10 +1,12 @@
 from DQN.my_env import Env
-from DQN.Prioritized_Replay_DQN.RL_brain import DQNPrioritizedReplay
+from DQN.RL_brain import SumDQN
 
 
 def run_maze():
     step = 0
-    for episode in range(501):
+    reward_sum=0#每十回合统计的奖励
+    step_sum=0#每十回合统计的步数
+    for episode in range(1001):
         # initial observation
         observation = env.reset()
 
@@ -17,20 +19,25 @@ def run_maze():
             observation_, reward, done = env.step(action)
             RL.store_transition(observation, action, reward, observation_)
 
-            if (step > 200) and (step % 5 == 0):
+            if (step > 100) and (step % 5 == 0):
                 RL.learn()
 
             # swap observation
             observation = observation_
 
             env.update_env(episode, step_counter,done,reward)
+            reward_sum+=reward
 
             if done:
+                step_sum += step_counter
                 break
             step += 1
             step_counter+=1
-        if (episode%20==0) &(episode!=0):
-            env.Reward_memory(episode)
+
+        if (episode%10==0) &(episode!=0):
+            env.Reward_memory(episode/10,reward_sum/10,step_sum/10)
+            reward_sum=0
+            step_sum=0
     # end of game
     env.draw()
     print('game over')
@@ -39,12 +46,15 @@ def run_maze():
 if __name__ == "__main__":
     # maze game
     env = Env()
-    RL = DQNPrioritizedReplay(env.n_actions, env.n_features,
+    RL = SumDQN(env.n_actions, env.n_features,
                       learning_rate=0.01,
                       reward_decay=0.9,
                       e_greedy=0.9,
                       replace_target_iter=200,
-                      memory_size=2000,
+                      memory_size=10000,
+                      double_q=True,
+                      prioritized=True,
+                      dueling=True    
                       # output_graph=True
                       )
     run_maze()
