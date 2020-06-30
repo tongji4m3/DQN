@@ -186,10 +186,40 @@ class Env:
 
         self.position = np.array([0, 0])  # 起始位置
         self.fresh_time = 0.01  # 刷新速度
+        #用来画图存数据的数组
         self.array_x = []
         self.array_y = []
         self.array_z = []
+        self.min_road_reward=[]
 
+        self.minRoadMaze=np.array(
+            [
+                [0,0],
+                [0,1],
+                [0,2],
+                [0,3],
+                [0,4],
+                [1,4],
+                [1,5],
+                [2,5],
+                [3,5],
+                [4,5],
+                [5,5],
+            ]
+        )
+        self.minRoadMaze_n=self.maze.shape[0]
+        # 最短路径
+        # (0, 0)
+        # (0, 1)
+        # (0, 2)
+        # (0, 3)
+        # (0, 4)
+        # (1, 4)
+        # (1, 5)
+        # (2, 5)
+        # (3, 5)
+        # (4, 5)
+        # (5, 5)
     # 重新初始化位置参数
     def reset(self):
         self.position = np.array([0, 0])  # 起始位置
@@ -317,7 +347,14 @@ class Env:
         # #sys.stdout.flush()
 
     # 更新位置,获取奖励
-
+    def minRoad(self):
+        minRoadReward=0
+        for i in range(self.minRoadMaze_n-1):
+            temp_x=self.minRoadMaze[i][0]*self.n+self.minRoadMaze[i][1]
+            temp_y=self.minRoadMaze[i+1][0]*self.n+self.minRoadMaze[i+1][1]
+            temp=-1*self.distinction[temp_x][temp_y]*self.people[temp_x][temp_y]
+            minRoadReward+=temp
+        return minRoadReward
     def step(self, action):
         # 0 上   1 下  3 左  2 右
         # 注意左右的定义不同
@@ -355,7 +392,6 @@ class Env:
             # print(self.n)
             # reward=当前距离*人流量
             reward = -1*self.distinction[transformed_position_x][transformed_position_y]*self.people[transformed_position_x][transformed_position_y]
-
             done = False
 
         # 当前位置 之后再更新,不然会覆盖奖励
@@ -389,8 +425,14 @@ class Env:
         # for i in range(len(self.array_x)):
         #     plt.scatter(self.array_x[i],self.array_y[i],color='black')
 
+        minReward=self.minRoad()
+        for i in range(100):
+          self.min_road_reward.append(minReward)
+
+
         # 画奖励曲线
         plt.plot(self.array_x, self.array_y)
+        plt.plot(self.array_x,self.min_road_reward)
         plt.xlim((0, 100))
         plt.ylim((-500, 100))
         plt.ylabel('Avg Reward')
