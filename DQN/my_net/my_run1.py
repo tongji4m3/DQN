@@ -1,5 +1,7 @@
 from DQN.my_env import Env
-from DQN.RL_brain import SumDQN
+from DQN.my_net.RL_brain1 import SumDQN
+import tensorflow as tf
+import numpy as np
 import tensorflow as tf
 
 def run_maze():
@@ -19,8 +21,8 @@ def run_maze():
             observation_, reward, done = env.step(action)
             RL.store_transition(observation, action, reward, observation_)
 
-            if (step > 100) and (step % 5 == 0):
-                RL.learn()
+            # if (step > 100) and (step % 5 == 0):
+            #     RL.learn()
 
             # swap observation
             observation = observation_
@@ -62,7 +64,7 @@ if __name__ == "__main__":
     init = tf.global_variables_initializer()
     with tf.Session() as sess:
         sess.run(init)
-        save_path=saver.save(sess,"my_net/save_net.ckpt")
+        save_path=saver.save(sess,"../my_net/save_net.ckpt")
         print("Save to path:",save_path)
 
 
