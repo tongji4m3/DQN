@@ -1,6 +1,7 @@
 import numpy as np
 import time
 import sys
+import random
 import matplotlib.pyplot as plt
 
 
@@ -233,6 +234,33 @@ class Env:
         )
 
         return np.array([-0.5, -0.5])  # observation采取的坐标不太一样
+
+    #实现人流量动态改变
+    def resetPeople(self):
+        move=random.randint(0,1)#这个训练回合什么都不做
+        N=self.m*self.n
+        if move:
+            #改变放在新人流量矩阵上,每次整体更新,防止有人走了多步
+            newPeople=self.people[:]
+            for i in N:
+                #如果横着的边在实际中是存在的,并且边上有人
+                if(i+1<N and self.people[i][i+1]>0):
+                    #对路径上的每个人分别随机走,共7种选择(不一定没种都能走)
+                    #不动,左,左上,左下,右,右上,右下
+                    for pathPeople in self.people[i][i+1]:
+                        change=False #代表这个人是否已经走了
+                        while change!=False:
+                            direction=random.randint(0,6)
+                            if direction==0:
+                                change=True
+                            if direction==1:
+                                #如果左边路径确实存在
+                                if i-1>=0 and self.people[i-1][i]>-1:
+                                    newPeople[i - 1][i]+=1
+                                    newPeople[i][i+1]-=1
+                                    change=True
+
+            self.people=newPeople[:]
 
 
     def update_env(self, episode, step_counter, done, reward):
