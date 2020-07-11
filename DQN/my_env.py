@@ -239,26 +239,118 @@ class Env:
     def resetPeople(self):
         move=random.randint(0,1)#这个训练回合什么都不做
         N=self.m*self.n
+        nn=self.n
         if move:
             #改变放在新人流量矩阵上,每次整体更新,防止有人走了多步
             newPeople=self.people[:]
             for i in N:
                 #如果横着的边在实际中是存在的,并且边上有人
-                if(i+1<N and self.people[i][i+1]>0):
-                    #对路径上的每个人分别随机走,共7种选择(不一定没种都能走)
-                    #不动,左,左上,左下,右,右上,右下
-                    for pathPeople in self.people[i][i+1]:
+                if(i+1<N and (self.people[i][i+1]>0 or self.people[i+1][i]>0)):
+                    #对路径上的每个人分别随机走,共4种选择(不一定没种都能走)
+                    #不动,上，下，左/右
+                    #0   1   2  3
+
+                    #对于i+1→i
+                    for pathPeople in self.people[i+1][i]:
                         change=False #代表这个人是否已经走了
                         while change!=False:
-                            direction=random.randint(0,6)
+                            direction=random.randint(0,3)
                             if direction==0:
                                 change=True
                             if direction==1:
-                                #如果左边路径确实存在
-                                if i-1>=0 and self.people[i-1][i]>-1:
-                                    newPeople[i - 1][i]+=1
+                                #如果左上路径确实存在
+                                if i-self.n>=0 and self.people[i][i-self.n]>-1:
+                                    newPeople[i][i-self.n]+=1
+                                    newPeople[i+1][i]-=1
+                                    change=True
+                            if direction==2:
+                                #如果左下路径确实存在
+                                if i+self.n<N and self.people[i][i+self.n]>-1:
+                                    newPeople[i][i+self.n]+=1
+                                    newPeople[i+1][i]-=1
+                                    change=True
+                            if direction==3:
+                                #如果左路径确实存在
+                                if i-1>=0 and self.people[i][i-1]>-1:
+                                    newPeople[i][i-1]+=1
+                                    newPeople[i+1][i]-=1
+                                    change=True
+                    #对于i→i+1
+                    for pathPeople in self.people[i][i+1]:
+                        change=False
+                        while change!=False:
+                            direction=random.randint(0,3)
+                            if direction==0:
+                                change=True
+                            if direction==1:
+                                #如果右上
+                                if i+1-self.n>=0 and self.people[i+1][i+1-self.n]>-1:
+                                    newPeople[i+1][i+1-self.n]+=1
                                     newPeople[i][i+1]-=1
                                     change=True
+                            if direction==2:
+                                #如果右下
+                                if i+1+self.n<N and self.people[i+1][i+1+self.n]>-1:
+                                    newPeople[i+1][i+1+self.n]+=1
+                                    newPeople[i][i+1]-=1
+                                    change=True
+                            if direction==3:
+                                if i+2<N and self.people[i+1][i+2]>-1:
+                                    newPeople[i+1][i+2]+=1
+                                    newPeople[i][i+1]-=1
+                                    change=True
+                if(i+nn<N and (self.people[i][i+nn]>0 or self.people[i+nn][i]>0)):
+                     # 对路径上的每个人分别随机走,共4种选择(不一定没种都能走)
+                     # 不动,左，右，上/下
+                     # 0   1   2  3
+                     # 对于i+nn→i
+                    for pathPeople in self.people[i + nn][i]:
+                        change = False
+                        while change != False:
+                            direction = random.randint(0, 3)
+                            if direction == 0:
+                                change = True
+                            if direction==1:
+                                if i-1>=0 and self.people[i][i-1]>-1:
+                                    newPeople[i][i-1]+=1
+                                    newPeople[i+nn][i]-=1
+                                    change=True
+                            if direction==2:
+                                if self.poeple[i][i+1]>-1:
+                                    newPeople[i][i+1]+=1
+                                    mewPeople[i+nn][i]-=1
+                                    change=True
+                            if direction==3:
+                                if i-nn>=0 and self.people[i][i-nn]>-1:
+                                    newPeople[i][i-nn]+=1
+                                    newPeople[i+nn][i]-=1
+                                    change=True
+                    #对于i→i+nn
+                    for pathPeople in self.people[i][i+nn]:
+                        change=False
+                        while change!=False:
+                            direction =random.randint(0,3)
+                            if direction ==0:
+                                change=True
+                            if direction==1:
+                                if self.people[i+nn][i+nn-1]>-1:
+                                    newPeople[i+nn][i+nn-1]+=1
+                                    mewPeople[i][i+nn]-=1
+                                    change=True
+                            if direction==2:
+                                if i+nn+1<N and self.poeple[i+nn][i+nn+1]>-1:
+                                    newPeople[i+nn][i+nn+1]+=1
+                                    mewPeople[i][i+nn]-=1
+                                    change=True
+                            if direction==3:
+                                if i+2*nn<N and self.people[i+nn][i+2*nn]>-1:
+                                    newPeople[i+nn][i+2*nn]+=1
+                                    newPeople[i][i+nn]-=1
+                                    change=True
+
+
+
+
 
             self.people=newPeople[:]
 
