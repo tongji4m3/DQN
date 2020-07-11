@@ -2,7 +2,6 @@ from DQN.my_env import Env
 from DQN.my_net.RL_brain1 import SumDQN
 import tensorflow as tf
 import numpy as np
-import tensorflow as tf
 
 def run_maze():
     step = 0
@@ -60,12 +59,12 @@ if __name__ == "__main__":
                       # output_graph=True
                       )
     run_maze()
-    saver=tf.train.Saver()
-    init = tf.global_variables_initializer()
-    with tf.Session() as sess:
-        sess.run(init)
-        save_path=saver.save(sess,"../my_net/save_net.ckpt")
-        print("Save to path:",save_path)
+    # saver=tf.train.Saver()
+    # init = tf.global_variables_initializer()
+    # with tf.Session() as sess:
+    #     sess.run(init)
+    #     save_path=saver.save(sess,"../my_net/save_net.ckpt")
+    #     print("Save to path:",save_path)
 
 
 

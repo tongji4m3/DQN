@@ -189,9 +189,10 @@ class SumDQN:
     def _build_net(self):
         def build_layers(s, c_names, n_l1, w_initializer, b_initializer, trainable):
             with tf.variable_scope('l1'):
-                w1 = tf.get_variable(np.arange(self.n_features*n_l1).reshape(self.n_features.n_l1),collections=c_names, trainable=trainable,name="w1")
-               #修改b1的值，以读取网络
-                b1 = tf.get_variable('b1', [1, n_l1], initializer=b_initializer, collections=c_names,  trainable=trainable)
+                #建立w,b容器
+                w1 = tf.get_variable(np.arange(self.n_features*n_l1).reshape(self.n_features,n_l1),collections=c_names, trainable=trainable,name="w1")
+                b1 = tf.get_variable(np.arange(1*n_l1).reshape(1,n_l1),collections=c_names, trainable=trainable,name="b1")
+                #b1 = tf.get_variable('b1', [1, n_l1], initializer=b_initializer, collections=c_names,  trainable=trainable)
                 l1 = tf.nn.relu(tf.matmul(s, w1) + b1)
 
             # change
@@ -244,6 +245,17 @@ class SumDQN:
             c_names = ['target_net_params', tf.GraphKeys.GLOBAL_VARIABLES]
             self.q_next = build_layers(self.s_, c_names, n_l1, w_initializer, b_initializer, False)
 
+    def store_transition(self, s, a, r, s_):
+        if self.prioritized:  # prioritized replay
+            transition = np.hstack((s, [a, r], s_))
+            self.memory.store(transition)  # have high priority for newly arrived transition
+        else:  # random replay
+            if not hasattr(self, 'memory_counter'):
+                self.memory_counter = 0
+            transition = np.hstack((s, [a, r], s_))
+            index = self.memory_counter % self.memory_size
+            self.memory[index, :] = transition
+            self.memory_counter += 1
 
 
     def choose_action(self, observation):
