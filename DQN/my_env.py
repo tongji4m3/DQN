@@ -1,6 +1,5 @@
 import numpy as np
 import time
-import sys
 import random
 import matplotlib.pyplot as plt
 
@@ -10,15 +9,6 @@ class Env:
         self.n_actions = 4  # 共有四个动作:上下左右 0132
         self.n_features = 2  # 二维的
         # 二维迷宫
-        # self.maze = np.array(
-        #     [
-        #         [0, 0, 0, 0],
-        #         [-1, 0, -2, 0],
-        #         [-2, -2, -1, -2],
-        #         [-3, -1, -2, 1]
-        #     ]
-        # )
-
         self.maze = np.array(
             [
                 [0, 0, 0, 0, 0, 0],
@@ -29,6 +19,7 @@ class Env:
                 [0, 0, 0, 0, 0, 1],
             ]
         )
+        #距离矩阵
         self.distinction = np.array(
             [
                 [0, 9, -1, -1, -1, -1, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -107,6 +98,7 @@ class Env:
 
         ]
         )
+        #人流量矩阵
         self.people = np.array(
             [
                 [0, 9, 0, 0, 0, 0, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -188,7 +180,7 @@ class Env:
         self.n = self.maze.shape[1]
 
         self.position = np.array([0, 0])  # 起始位置
-        self.fresh_time = 0.01  # 刷新速度
+        self.fresh_time = 0.001  # 刷新速度
         #用来画图存数据的数组
         self.array_x = []
         self.array_y = []
@@ -221,7 +213,6 @@ class Env:
     def reset(self):
         self.position = np.array([0, 0])  # 起始位置
 
-
         self.maze = np.array(
             [
                 [0, 0, 0, 0, 0, 0],
@@ -243,7 +234,7 @@ class Env:
         if move:
             #改变放在新人流量矩阵上,每次整体更新,防止有人走了多步
             newPeople=self.people[:]
-            for i in N:
+            for i in range(N):
                 #如果横着的边在实际中是存在的,并且边上有人
                 if(i+1<N and (self.people[i][i+1]>0 or self.people[i+1][i]>0)):
                     #对路径上的每个人分别随机走,共4种选择(不一定没种都能走)
@@ -251,9 +242,9 @@ class Env:
                     #0   1   2  3
 
                     #对于i+1→i
-                    for pathPeople in self.people[i+1][i]:
+                    for pathPeople in range(self.people[i+1][i]):
                         change=False #代表这个人是否已经走了
-                        while change!=False:
+                        while change!=True:
                             direction=random.randint(0,3)
                             if direction==0:
                                 change=True
@@ -276,9 +267,9 @@ class Env:
                                     newPeople[i+1][i]-=1
                                     change=True
                     #对于i→i+1
-                    for pathPeople in self.people[i][i+1]:
+                    for pathPeople in range(self.people[i][i+1]):
                         change=False
-                        while change!=False:
+                        while change!=True:
                             direction=random.randint(0,3)
                             if direction==0:
                                 change=True
@@ -299,14 +290,15 @@ class Env:
                                     newPeople[i+1][i+2]+=1
                                     newPeople[i][i+1]-=1
                                     change=True
+
                 if(i+nn<N and (self.people[i][i+nn]>0 or self.people[i+nn][i]>0)):
                      # 对路径上的每个人分别随机走,共4种选择(不一定没种都能走)
                      # 不动,左，右，上/下
                      # 0   1   2  3
                      # 对于i+nn→i
-                    for pathPeople in self.people[i + nn][i]:
+                    for pathPeople in range(self.people[i + nn][i]):
                         change = False
-                        while change != False:
+                        while change != True:
                             direction = random.randint(0, 3)
                             if direction == 0:
                                 change = True
@@ -316,9 +308,9 @@ class Env:
                                     newPeople[i+nn][i]-=1
                                     change=True
                             if direction==2:
-                                if self.poeple[i][i+1]>-1:
+                                if i+nn<N and self.people[i][i+1]>-1:
                                     newPeople[i][i+1]+=1
-                                    mewPeople[i+nn][i]-=1
+                                    newPeople[i+nn][i]-=1
                                     change=True
                             if direction==3:
                                 if i-nn>=0 and self.people[i][i-nn]>-1:
@@ -326,21 +318,21 @@ class Env:
                                     newPeople[i+nn][i]-=1
                                     change=True
                     #对于i→i+nn
-                    for pathPeople in self.people[i][i+nn]:
+                    for pathPeople in range(self.people[i][i+nn]):
                         change=False
-                        while change!=False:
+                        while change!=True:
                             direction =random.randint(0,3)
                             if direction ==0:
                                 change=True
                             if direction==1:
                                 if self.people[i+nn][i+nn-1]>-1:
                                     newPeople[i+nn][i+nn-1]+=1
-                                    mewPeople[i][i+nn]-=1
+                                    newPeople[i][i+nn]-=1
                                     change=True
                             if direction==2:
-                                if i+nn+1<N and self.poeple[i+nn][i+nn+1]>-1:
+                                if i+nn+1<N and self.people[i+nn][i+nn+1]>-1:
                                     newPeople[i+nn][i+nn+1]+=1
-                                    mewPeople[i][i+nn]-=1
+                                    newPeople[i][i+nn]-=1
                                     change=True
                             if direction==3:
                                 if i+2*nn<N and self.people[i+nn][i+2*nn]>-1:
@@ -348,8 +340,13 @@ class Env:
                                     newPeople[i][i+nn]-=1
                                     change=True
 
-
-
+            # count=0
+            for i in range(self.m*self.n):
+                for j in range(self.m*self.n):
+                    #count+=newPeople[i][j]
+                    print(newPeople[i][j],end=" ")
+                print()
+            # print(count)
 
 
             self.people=newPeople[:]
@@ -360,13 +357,6 @@ class Env:
         if done:
             interaction = 'Episode %s: total_steps = %s' % (episode + 1, step_counter)
             print('\r{}'.format(interaction), '')
-            # if reward==1:
-            #     print("find reward!")
-            #     self.Reward+=0.3
-            # else:
-            #     print("not find!")
-            #     self.Reward-=0.3
-
             print('\r                           ', '')
 
             time.sleep(self.fresh_time)
@@ -422,10 +412,10 @@ class Env:
             # 转化为邻接矩阵的坐标
             transformed_position_x=pre_position_x*self.n+pre_position_y
             transformed_position_y=self.position[0]*self.n+self.position[1]
-            print(pre_position_x,pre_position_y,self.position[0],self.position[1])
+            #print(pre_position_x,pre_position_y,self.position[0],self.position[1])
             # reward=-1*A*当前距离+B*人流量
             reward = -1*(self.distinction_weight*self.distinction[transformed_position_x][transformed_position_y]+self.people_weight*self.people[transformed_position_x][transformed_position_y])
-            print(reward)
+            #print(reward)
             done = False
 
         # 当前位置 之后再更新,不然会覆盖奖励
