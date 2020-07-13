@@ -190,8 +190,8 @@ class SumDQN:
         def build_layers(s, c_names, n_l1, w_initializer, b_initializer, trainable):
             with tf.variable_scope('l1'):
                 #建立w,b容器
-                w1 = tf.get_variable(np.arange(self.n_features*n_l1).reshape(self.n_features,n_l1),collections=c_names, trainable=trainable,name="w1")
-                b1 = tf.get_variable(np.arange(1*n_l1).reshape(1,n_l1),collections=c_names, trainable=trainable,name="b1")
+                w1 = tf.get_variable("w1",np.arange(self.n_features*n_l1).reshape(self.n_features,n_l1),collections=c_names, trainable=trainable)
+                b1 = tf.get_variable("b1",np.arange(1*n_l1).reshape(1,n_l1),collections=c_names, trainable=trainable)
                 #b1 = tf.get_variable('b1', [1, n_l1], initializer=b_initializer, collections=c_names,  trainable=trainable)
                 l1 = tf.nn.relu(tf.matmul(s, w1) + b1)
 

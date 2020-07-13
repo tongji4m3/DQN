@@ -59,12 +59,10 @@ if __name__ == "__main__":
                       # output_graph=True
                       )
     run_maze()
-    # saver=tf.train.Saver()
-    # init = tf.global_variables_initializer()
-    # with tf.Session() as sess:
-    #     sess.run(init)
-    #     save_path=saver.save(sess,"../my_net/save_net.ckpt")
-    #     print("Save to path:",save_path)
+    new_saver=tf.train.Saver()
+    with tf.Session() as sess:
+        new_saver.restore(sess,"my_net/save_net.ckpt")
+
 
 
 

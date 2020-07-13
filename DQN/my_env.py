@@ -257,11 +257,11 @@ class Env:
         for i in range(self.minRoadMaze_n-1):
             temp_x=self.minRoadMaze[i][0]*self.n+self.minRoadMaze[i][1]
             temp_y=self.minRoadMaze[i+1][0]*self.n+self.minRoadMaze[i+1][1]
-            print(temp_x,temp_y)
+
             temp=-1*(self.distinction_weight*self.distinction[temp_x][temp_y]+self.people_weight*self.people[temp_x][temp_y])
             minRoadReward+=temp
         minRoadReward+=self.target_reward
-        print(minRoadReward)
+
         return minRoadReward
     def step(self, action):
         # 0 上   1 下  3 左  2 右
@@ -289,10 +289,10 @@ class Env:
         if self.maze[self.position[0]][self.position[1]] == 1:
             transformed_position_x = pre_position_x * self.n + pre_position_y
             transformed_position_y = self.position[0] * self.n + self.position[1]
-            print(pre_position_x, pre_position_y, self.position[0], self.position[1])
+            # print(pre_position_x, pre_position_y, self.position[0], self.position[1])
             # reward=-1*A*当前距离+B*人流量
             reward = -1 * (self.distinction_weight * self.distinction[transformed_position_x][transformed_position_y] + self.people_weight * self.people[transformed_position_x][transformed_position_y])
-            print(reward)
+            # print(reward)
             reward += self.target_reward
             done = True
         # elif  self.maze[self.position[0]][self.position[1]]==-1:
@@ -302,10 +302,10 @@ class Env:
             # 转化为邻接矩阵的坐标
             transformed_position_x=pre_position_x*self.n+pre_position_y
             transformed_position_y=self.position[0]*self.n+self.position[1]
-            print(pre_position_x,pre_position_y,self.position[0],self.position[1])
+            # print(pre_position_x,pre_position_y,self.position[0],self.position[1])
             # reward=-1*A*当前距离+B*人流量
             reward = -1*(self.distinction_weight*self.distinction[transformed_position_x][transformed_position_y]+self.people_weight*self.people[transformed_position_x][transformed_position_y])
-            print(reward)
+            # print(reward)
             done = False
 
         # 当前位置 之后再更新,不然会覆盖奖励
