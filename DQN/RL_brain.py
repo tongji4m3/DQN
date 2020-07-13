@@ -303,3 +303,10 @@ class SumDQN:
 
         self.epsilon = self.epsilon + self.epsilon_increment if self.epsilon < self.epsilon_max else self.epsilon_max
         self.learn_step_counter += 1
+
+    def save(self,RLname):
+        w1_info=tf.get_default_graph().get_tensor_by_name('eval_net/l1/w1:0')
+        print(self.sess.run(w1_info))
+
+        saver = tf.train.Saver()
+        saver.save(self.sess, RLname)

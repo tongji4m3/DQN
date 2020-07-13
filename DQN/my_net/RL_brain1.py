@@ -46,7 +46,7 @@ class SumTree(object):
         change = p - self.tree[tree_idx]
         self.tree[tree_idx] = p
         # then propagate the change through tree
-        while tree_idx != 0:    # this method is faster than the recursive loop in the reference code
+        while tree_idx != 0:  # this method is faster than the recursive loop in the reference code
             tree_idx = (tree_idx - 1) // 2
             self.tree[tree_idx] += change
 
@@ -65,13 +65,13 @@ class SumTree(object):
         [0,1,2,3,4,5,6]
         """
         parent_idx = 0
-        while True:     # the while loop is faster than the method in the reference code
-            cl_idx = 2 * parent_idx + 1         # this leaf's left and right kids
+        while True:  # the while loop is faster than the method in the reference code
+            cl_idx = 2 * parent_idx + 1  # this leaf's left and right kids
             cr_idx = cl_idx + 1
-            if cl_idx >= len(self.tree):        # reach bottom, end search
+            if cl_idx >= len(self.tree):  # reach bottom, end search
                 leaf_idx = parent_idx
                 break
-            else:       # downward search, always search for a higher priority node
+            else:  # downward search, always search for a higher priority node
                 if v <= self.tree[cl_idx]:
                     parent_idx = cl_idx
                 else:
@@ -104,20 +104,21 @@ class Memory(object):  # stored as ( s, a, r, s_ ) in SumTree
         max_p = np.max(self.tree.tree[-self.tree.capacity:])
         if max_p == 0:
             max_p = self.abs_err_upper
-        self.tree.add(max_p, transition)   # set the max p for new p
+        self.tree.add(max_p, transition)  # set the max p for new p
 
     def sample(self, n):
-        b_idx, b_memory, ISWeights = np.empty((n,), dtype=np.int32), np.empty((n, self.tree.data[0].size)), np.empty((n, 1))
-        pri_seg = self.tree.total_p / n       # priority segment
+        b_idx, b_memory, ISWeights = np.empty((n,), dtype=np.int32), np.empty((n, self.tree.data[0].size)), np.empty(
+            (n, 1))
+        pri_seg = self.tree.total_p / n  # priority segment
         self.beta = np.min([1., self.beta + self.beta_increment_per_sampling])  # max = 1
 
-        min_prob = np.min(self.tree.tree[-self.tree.capacity:]) / self.tree.total_p     # for later calculate ISweight
+        min_prob = np.min(self.tree.tree[-self.tree.capacity:]) / self.tree.total_p  # for later calculate ISweight
         for i in range(n):
             a, b = pri_seg * i, pri_seg * (i + 1)
             v = np.random.uniform(a, b)
             idx, p, data = self.tree.get_leaf(v)
             prob = p / self.tree.total_p
-            ISWeights[i, 0] = np.power(prob/min_prob, -self.beta)
+            ISWeights[i, 0] = np.power(prob / min_prob, -self.beta)
             b_idx[i], b_memory[i, :] = idx, data
         return b_idx, b_memory, ISWeights
 
@@ -148,6 +149,9 @@ class SumDQN:
             dueling=True,
             sess=None,
     ):
+        self.model_name = "my_net/save_net.ckpt"
+        self.sess=tf.Session()
+
         self.n_actions = n_actions
         self.n_features = n_features
         self.lr = learning_rate
@@ -173,7 +177,7 @@ class SumDQN:
         if self.prioritized:
             self.memory = Memory(capacity=memory_size)
         else:
-            self.memory = np.zeros((self.memory_size, n_features*2+2))
+            self.memory = np.zeros((self.memory_size, n_features * 2 + 2))
 
         if sess is None:
             self.sess = tf.Session()
@@ -187,83 +191,99 @@ class SumDQN:
         self.cost_his = []
 
     def _build_net(self):
-        def build_layers(s, c_names, n_l1, w_initializer, b_initializer, trainable):
-            with tf.variable_scope('l1'):
-                #建立w,b容器
-                w1 = tf.get_variable(np.arange(self.n_features*n_l1).reshape(self.n_features,n_l1),collections=c_names, trainable=trainable,name="w1")
-                b1 = tf.get_variable(np.arange(1*n_l1).reshape(1,n_l1),collections=c_names, trainable=trainable,name="b1")
-                #b1 = tf.get_variable('b1', [1, n_l1], initializer=b_initializer, collections=c_names,  trainable=trainable)
-                l1 = tf.nn.relu(tf.matmul(s, w1) + b1)
+        # def build_layers(s, n_l1, trainable=False):
+        n_l1=20
+        self.s=tf.placeholder(tf.float32, [None, self.n_features], name='s')
+        with tf.variable_scope('l1'):
+            # 建立w,b容器
+            w1 = tf.Variable(np.arange(self.n_features * n_l1).reshape((self.n_features, n_l1)), dtype=tf.float32,
+                             name='w1')
 
-            # change
-            if self.dueling:
-                # Dueling DQN
-                with tf.variable_scope('Value'):
-                    w2 = tf.get_variable('w2', [n_l1, 1], initializer=w_initializer, collections=c_names)
-                    b2 = tf.get_variable('b2', [1, 1], initializer=b_initializer, collections=c_names)
-                    self.V = tf.matmul(l1, w2) + b2
+            b1 = tf.Variable(np.arange(1 * n_l1).reshape((1, n_l1)), dtype=tf.float32, name="b1")
+            # b1 = tf.get_variable('b1', [1, n_l1], initializer=b_initializer, collections=c_names,  trainable=trainable)
 
-                with tf.variable_scope('Advantage'):
-                    w2 = tf.get_variable('w2', [n_l1, self.n_actions], initializer=w_initializer, collections=c_names)
-                    b2 = tf.get_variable('b2', [1, self.n_actions], initializer=b_initializer, collections=c_names)
-                    self.A = tf.matmul(l1, w2) + b2
+            l1 = tf.nn.relu(tf.matmul(self.s, w1) + b1)
 
-                with tf.variable_scope('Q'):
-                    out = self.V + (self.A - tf.reduce_mean(self.A, axis=1, keep_dims=True))  # Q = V(s) + A(s,a)
-            else:
-                with tf.variable_scope('Q'):
-                    w2 = tf.get_variable('w2', [n_l1, self.n_actions], initializer=w_initializer, collections=c_names)
-                    b2 = tf.get_variable('b2', [1, self.n_actions], initializer=b_initializer, collections=c_names)
-                    out = tf.matmul(l1, w2) + b2
+        # change
+        if self.dueling:
+            # Dueling DQN
+            with tf.variable_scope('Value'):
+                w2 = tf.Variable(np.arange(n_l1*1).reshape((n_l1,1)),
+                                 dtype=tf.float32, name="w2")
+                b2 = tf.Variable(np.arange(1 * 1).reshape((1, 1)), dtype=tf.float32, name="b2")
+                self.V = tf.matmul(l1, w2) + b2
 
-            return out
+            with tf.variable_scope('Advantage'):
+                w2 = tf.Variable(np.arange(n_l1 * self.n_actions).reshape((n_l1, self.n_actions)), dtype=tf.float32,
+                                 name="w2")
+                b2 = tf.Variable(np.arange(1 * self.n_actions).reshape((1, self.n_actions)), dtype=tf.float32,
+                                 name="b2")
+                self.A = tf.matmul(l1, w2) + b2
+
+            with tf.variable_scope('Q'):
+                self.q_eval = self.V + (self.A - tf.reduce_mean(self.A, axis=1, keep_dims=True))  # Q = V(s) + A(s,a)
+        else:
+            with tf.variable_scope('Q'):
+                w2 = tf.Variable(np.arange(n_l1 * self.n_actions).reshape((n_l1, self.n_actions)), dtype=tf.float32,
+                                 name="w2")
+                b2 = tf.Variable(np.arange(1 * self.n_actions).reshape((1, self.n_actions)), dtype=tf.float32,
+                                 name="b2")
+                self.q_eval = tf.matmul(l1, w2) + b2
+
+        # return out
 
         # ------------------ build evaluate_net ------------------
-        self.s = tf.placeholder(tf.float32, [None, self.n_features], name='s')  # input
+        #self.s = tf.placeholder(tf.float32, [None, self.n_features], name='s')  # input
         self.q_target = tf.placeholder(tf.float32, [None, self.n_actions], name='Q_target')  # for calculating loss
         if self.prioritized:
             self.ISWeights = tf.placeholder(tf.float32, [None, 1], name='IS_weights')
-        with tf.variable_scope('eval_net'):
-            c_names, n_l1, w_initializer, b_initializer = \
-                ['eval_net_params', tf.GraphKeys.GLOBAL_VARIABLES], 20, \
-                tf.random_normal_initializer(0., 0.3), tf.constant_initializer(0.1)  # config of layers
+        # with tf.variable_scope('eval_net'):
+        #     c_names, n_l1, w_initializer, b_initializer = \
+        #         ['eval_net_params', tf.GraphKeys.GLOBAL_VARIABLES], 20, \
+        #         tf.random_normal_initializer(0., 0.3), tf.constant_initializer(0.1)  # config of layers
 
-            self.q_eval = build_layers(self.s, c_names, n_l1, w_initializer, b_initializer, True)
+        #self.q_eval = build_layers(self.s, 20)
 
-        with tf.variable_scope('loss'):
-            if self.prioritized:
-                self.abs_errors = tf.reduce_sum(tf.abs(self.q_target - self.q_eval), axis=1)    # for updating Sumtree
-                self.loss = tf.reduce_mean(self.ISWeights * tf.squared_difference(self.q_target, self.q_eval))
-            else:
-                self.loss = tf.reduce_mean(tf.squared_difference(self.q_target, self.q_eval))
-        with tf.variable_scope('train'):
-            self._train_op = tf.train.RMSPropOptimizer(self.lr).minimize(self.loss)
+        # 读取模型参数
+        #saver = tf.train.Saver()
+
+        init = tf.global_variables_initializer()
+        self.sess.run(init)
+
+        saver = tf.train.import_meta_graph('C:/code_home/github/DQN/DQN/my_net/save_net.ckpt.meta')
+        saver.restore(self.sess, "C:/code_home/github/DQN/DQN/my_net/save_net.ckpt")
+
+        graph = tf.get_default_graph()
+        #w1 = graph.get_tensor_by_name("w1:0")
+        #w2 = graph.get_tensor_by_name("w2:0")
+        print(self.sess.run(w1))  # 输出读取到的一组参数，检验是否成功读取
 
         # ------------------ build target_net ------------------
-        self.s_ = tf.placeholder(tf.float32, [None, self.n_features], name='s_')    # input
-        with tf.variable_scope('target_net'):
-            c_names = ['target_net_params', tf.GraphKeys.GLOBAL_VARIABLES]
-            self.q_next = build_layers(self.s_, c_names, n_l1, w_initializer, b_initializer, False)
+        # self.s_ = tf.placeholder(tf.float32, [None, self.n_features], name='s_')    # input
+        # with tf.variable_scope('target_net'):
+        #     c_names = ['target_net_params', tf.GraphKeys.GLOBAL_VARIABLES]
+        #     self.q_next = build_layers(self.s_, c_names, n_l1, w_initializer, b_initializer, False)
 
-    def store_transition(self, s, a, r, s_):
-        if self.prioritized:  # prioritized replay
-            transition = np.hstack((s, [a, r], s_))
-            self.memory.store(transition)  # have high priority for newly arrived transition
-        else:  # random replay
-            if not hasattr(self, 'memory_counter'):
-                self.memory_counter = 0
-            transition = np.hstack((s, [a, r], s_))
-            index = self.memory_counter % self.memory_size
-            self.memory[index, :] = transition
-            self.memory_counter += 1
-
+    # def store_transition(self, s, a, r, s_):
+    #     if self.prioritized:  # prioritized replay
+    #         transition = np.hstack((s, [a, r], s_))
+    #         self.memory.store(transition)  # have high priority for newly arrived transition
+    #     else:  # random replay
+    #         if not hasattr(self, 'memory_counter'):
+    #             self.memory_counter = 0
+    #         transition = np.hstack((s, [a, r], s_))
+    #         index = self.memory_counter % self.memory_size
+    #         self.memory[index, :] = transition
+    #         self.memory_counter += 1
+    #
 
     def choose_action(self, observation):
         observation = observation[np.newaxis, :]
-        if np.random.uniform() < self.epsilon:
-            actions_value = self.sess.run(self.q_eval, feed_dict={self.s: observation})
-            action = np.argmax(actions_value)
-        else:
-            action = np.random.randint(0, self.n_actions)
-        return action
+        #if np.random.uniform() < self.epsilon:
 
+
+        # else:
+        #     action = np.random.randint(0, self.n_actions)
+        actions_value = self.sess.run(self.q_eval, feed_dict={self.s: observation})
+        action = np.argmax(actions_value)
+        return action

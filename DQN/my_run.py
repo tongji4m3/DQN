@@ -13,6 +13,9 @@ def run_maze():
         #人流量随机改变
         #env.resetPeople()
 
+        # if (episode % 10 == 0):
+        #     env.resetPeople()
+
         step_counter = 1
         while True:
             # RL choose action based on observation
@@ -61,12 +64,17 @@ if __name__ == "__main__":
                       # output_graph=True
                       )
     run_maze()
-    saver=tf.train.Saver()
-    init = tf.global_variables_initializer()
-    with tf.Session() as sess:
-        sess.run(init)
-        save_path=saver.save(sess,"my_net/save_net.ckpt")
-        print("Save to path:",save_path)
+
+
+    RL.save("my_net/save_net.ckpt")
+    graph = tf.get_default_graph()
+    # saver=tf.train.Saver()
+    # init = tf.global_variables_initializer()
+    # with tf.Session() as sess:
+    #     sess.run(init)
+    #
+    #     save_path=saver.save(sess,"my_net/save_net.ckpt")
+    #     print("Save to path:",save_path)
 
 
 

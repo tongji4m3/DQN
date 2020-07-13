@@ -185,7 +185,7 @@ class Env:
         self.array_z = []
         self.min_road_reward = []
         # 计算奖励用的函数参数
-        self.distinction_weight = 1
+        self.distinction_weight = 0
         self.people_weight = 2
         self.target_reward = 60
         # 最短路径
@@ -225,7 +225,8 @@ class Env:
 
     # 实现人流量动态改变
     def resetPeople(self):
-        move = random.randint(0, 1)  # 这个训练回合什么都不做
+        #move = random.randint(0, 1)  # 这个训练回合什么都不做
+        move=1
         N = self.m * self.n
         nn = self.n
         if move:
@@ -338,16 +339,17 @@ class Env:
                                     change = True
 
             # count=0
-            for i in range(self.m * self.n):
-                for j in range(self.m * self.n):
-                    # count+=newPeople[i][j]
-                    print(newPeople[i][j], end=" ")
-                print()
+            # for i in range(self.m * self.n):
+            #     for j in range(self.m * self.n):
+            #         # count+=newPeople[i][j]
+            #         print(newPeople[i][j], end=" ")
+            #     print()
             # print(count)
 
             self.people = newPeople[:]
 
     def update_env(self, episode, step_counter, done, reward):
+        #print(self.position[0],self.position[1])
 
         if done:
             interaction = 'Episode %s: total_steps = %s' % (episode + 1, step_counter)
@@ -395,12 +397,12 @@ class Env:
         if self.maze[self.position[0]][self.position[1]] == 1:
             transformed_position_x = pre_position_x * self.n + pre_position_y
             transformed_position_y = self.position[0] * self.n + self.position[1]
-            print(pre_position_x, pre_position_y, self.position[0], self.position[1])
+            #print(pre_position_x, pre_position_y, self.position[0], self.position[1])
             # reward=-1*A*当前距离+B*人流量
             reward = -1 * (self.distinction_weight * self.distinction[transformed_position_x][
                 transformed_position_y] + self.people_weight * self.people[transformed_position_x][
                                transformed_position_y])
-            print(reward)
+            #print(reward)
             reward += self.target_reward
             done = True
         # elif  self.maze[self.position[0]][self.position[1]]==-1:

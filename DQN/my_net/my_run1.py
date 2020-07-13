@@ -18,7 +18,7 @@ def run_maze():
 
             # RL take action and get next observation and reward
             observation_, reward, done = env.step(action)
-            RL.store_transition(observation, action, reward, observation_)
+            #RL.store_transition(observation, action, reward, observation_)
 
             # if (step > 100) and (step % 5 == 0):
             #     RL.learn()
@@ -59,6 +59,9 @@ if __name__ == "__main__":
                       # output_graph=True
                       )
     run_maze()
+
+
+
     # saver=tf.train.Saver()
     # init = tf.global_variables_initializer()
     # with tf.Session() as sess:
