@@ -10,6 +10,9 @@ def run_maze():
         # initial observation
         observation = env.reset()
 
+        #人流量随机改变
+        #env.resetPeople()
+
         step_counter = 1
         while True:
             # RL choose action based on observation
