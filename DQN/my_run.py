@@ -11,7 +11,7 @@ def run_maze():
         observation = env.reset()
 
         #人流量随机改变
-        #env.resetPeople()
+        env.resetPeople()
 
         # if (episode % 10 == 0):
         #     env.resetPeople()
