@@ -11,7 +11,7 @@ def run_maze():
         observation = env.reset()
 
         #人流量随机改变
-        env.resetPeople()
+        #env.resetPeople()
 
         step_counter = 1
         while True:
