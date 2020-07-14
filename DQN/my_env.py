@@ -349,7 +349,7 @@ class Env:
             self.people = newPeople[:]
 
     def update_env(self, episode, step_counter, done, reward):
-        #print(self.position[0],self.position[1])
+        print(self.position[0],self.position[1])
 
         if done:
             interaction = 'Episode %s: total_steps = %s' % (episode + 1, step_counter)

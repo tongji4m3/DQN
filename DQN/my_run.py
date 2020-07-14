@@ -11,7 +11,7 @@ def run_maze():
         observation = env.reset()
 
         #人流量随机改变
-        env.resetPeople()
+        #env.resetPeople()
 
         # if (episode % 10 == 0):
         #     env.resetPeople()
@@ -67,7 +67,7 @@ if __name__ == "__main__":
 
 
     RL.save("my_net/save_net.ckpt")
-    graph = tf.get_default_graph()
+    #graph = tf.get_default_graph()
     # saver=tf.train.Saver()
     # init = tf.global_variables_initializer()
     # with tf.Session() as sess:

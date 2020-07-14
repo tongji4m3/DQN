@@ -179,8 +179,8 @@ class SumDQN:
     def _build_net(self):
         def build_layers(s, c_names, n_l1, w_initializer, b_initializer, trainable):
             with tf.variable_scope('l1'):
-                w1 = tf.get_variable('w1', [self.n_features, n_l1], initializer=w_initializer, collections=c_names, trainable=trainable)
-                b1 = tf.get_variable('b1', [1, n_l1], initializer=b_initializer, collections=c_names,  trainable=trainable)
+                w1 = tf.get_variable('w1',[self.n_features, n_l1], initializer=w_initializer, collections=c_names, trainable=trainable)
+                b1 = tf.get_variable('b1',[1, n_l1], initializer=b_initializer, collections=c_names,  trainable=trainable)
                 l1 = tf.nn.relu(tf.matmul(s, w1) + b1)
 
             # change
@@ -307,6 +307,5 @@ class SumDQN:
     def save(self,RLname):
         w1_info=tf.get_default_graph().get_tensor_by_name('eval_net/l1/w1:0')
         print(self.sess.run(w1_info))
-
         saver = tf.train.Saver()
         saver.save(self.sess, RLname)

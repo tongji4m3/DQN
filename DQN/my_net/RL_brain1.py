@@ -194,41 +194,42 @@ class SumDQN:
         # def build_layers(s, n_l1, trainable=False):
         n_l1=20
         self.s=tf.placeholder(tf.float32, [None, self.n_features], name='s')
-        with tf.variable_scope('l1'):
-            # 建立w,b容器
-            w1 = tf.Variable(np.arange(self.n_features * n_l1).reshape((self.n_features, n_l1)), dtype=tf.float32,
-                             name='w1')
 
-            b1 = tf.Variable(np.arange(1 * n_l1).reshape((1, n_l1)), dtype=tf.float32, name="b1")
-            # b1 = tf.get_variable('b1', [1, n_l1], initializer=b_initializer, collections=c_names,  trainable=trainable)
+        with tf.variable_scope('eval_net'):
+            with tf.variable_scope('l1'):
+                # 建立w,b容器
+                w1 = tf.Variable(np.arange(self.n_features * n_l1).reshape((self.n_features, n_l1)), dtype=tf.float32,name="w1")
 
-            l1 = tf.nn.relu(tf.matmul(self.s, w1) + b1)
+                b1 = tf.Variable(np.arange(1 * n_l1).reshape((1, n_l1)), dtype=tf.float32, name="b1")
+                # b1 = tf.get_variable('b1', [1, n_l1], initializer=b_initializer, collections=c_names,  trainable=trainable)
 
-        # change
-        if self.dueling:
-            # Dueling DQN
-            with tf.variable_scope('Value'):
-                w2 = tf.Variable(np.arange(n_l1*1).reshape((n_l1,1)),
-                                 dtype=tf.float32, name="w2")
-                b2 = tf.Variable(np.arange(1 * 1).reshape((1, 1)), dtype=tf.float32, name="b2")
-                self.V = tf.matmul(l1, w2) + b2
+                l1 = tf.nn.relu(tf.matmul(self.s, w1) + b1)
 
-            with tf.variable_scope('Advantage'):
-                w2 = tf.Variable(np.arange(n_l1 * self.n_actions).reshape((n_l1, self.n_actions)), dtype=tf.float32,
-                                 name="w2")
-                b2 = tf.Variable(np.arange(1 * self.n_actions).reshape((1, self.n_actions)), dtype=tf.float32,
-                                 name="b2")
-                self.A = tf.matmul(l1, w2) + b2
+            # change
+            if self.dueling:
+                # Dueling DQN
+                with tf.variable_scope('Value'):
+                    w2 = tf.Variable(np.arange(n_l1*1).reshape((n_l1,1)),
+                                     dtype=tf.float32, name="w2")
+                    b2 = tf.Variable(np.arange(1 * 1).reshape((1, 1)), dtype=tf.float32, name="b2")
+                    self.V = tf.matmul(l1, w2) + b2
 
-            with tf.variable_scope('Q'):
-                self.q_eval = self.V + (self.A - tf.reduce_mean(self.A, axis=1, keep_dims=True))  # Q = V(s) + A(s,a)
-        else:
-            with tf.variable_scope('Q'):
-                w2 = tf.Variable(np.arange(n_l1 * self.n_actions).reshape((n_l1, self.n_actions)), dtype=tf.float32,
-                                 name="w2")
-                b2 = tf.Variable(np.arange(1 * self.n_actions).reshape((1, self.n_actions)), dtype=tf.float32,
-                                 name="b2")
-                self.q_eval = tf.matmul(l1, w2) + b2
+                with tf.variable_scope('Advantage'):
+                    w2 = tf.Variable(np.arange(n_l1 * self.n_actions).reshape((n_l1, self.n_actions)), dtype=tf.float32,
+                                     name="w2")
+                    b2 = tf.Variable(np.arange(1 * self.n_actions).reshape((1, self.n_actions)), dtype=tf.float32,
+                                     name="b2")
+                    self.A = tf.matmul(l1, w2) + b2
+
+                with tf.variable_scope('Q'):
+                    self.q_eval = self.V + (self.A - tf.reduce_mean(self.A, axis=1, keep_dims=True))  # Q = V(s) + A(s,a)
+            else:
+                with tf.variable_scope('Q'):
+                    w2 = tf.Variable(np.arange(n_l1 * self.n_actions).reshape((n_l1, self.n_actions)), dtype=tf.float32,
+                                     name="w2")
+                    b2 = tf.Variable(np.arange(1 * self.n_actions).reshape((1, self.n_actions)), dtype=tf.float32,
+                                     name="b2")
+                    self.q_eval = tf.matmul(l1, w2) + b2
 
         # return out
 
@@ -250,13 +251,19 @@ class SumDQN:
         init = tf.global_variables_initializer()
         self.sess.run(init)
 
-        saver = tf.train.import_meta_graph('C:/code_home/github/DQN/DQN/my_net/save_net.ckpt.meta')
-        saver.restore(self.sess, "C:/code_home/github/DQN/DQN/my_net/save_net.ckpt")
+        #saver = tf.train.import_meta_graph("E:\Innovate projects\DQN-master\DQN\DQN\my_net\save_net.ckpt.meta")
+        #saver=tf.train.Saver()
+        saver=tf.train.Saver()
+        saver.restore(self.sess, "save_net.ckpt")
 
-        graph = tf.get_default_graph()
+        w1_info = tf.get_default_graph().get_tensor_by_name('eval_net/l1/w1:0')
+        print(self.sess.run(w1_info))
+        print(self.sess.run(w1))
+
+        #graph = tf.get_default_graph()
         #w1 = graph.get_tensor_by_name("w1:0")
         #w2 = graph.get_tensor_by_name("w2:0")
-        print(self.sess.run(w1))  # 输出读取到的一组参数，检验是否成功读取
+        #print(self.sess.run(w1))  # 输出读取到的一组参数，检验是否成功读取
 
         # ------------------ build target_net ------------------
         # self.s_ = tf.placeholder(tf.float32, [None, self.n_features], name='s_')    # input
