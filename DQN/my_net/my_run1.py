@@ -14,10 +14,10 @@ def run_maze():
         step_counter = 1
         while True:
             # RL choose action based on observation
-            action = RL.choose_action(observation)
+            actions_value = RL.choose_action(observation)
 
             # RL take action and get next observation and reward
-            observation_, reward, done = env.step(action)
+            observation_, reward, done = env.step1(actions_value,step_counter)
             #RL.store_transition(observation, action, reward, observation_)
 
             # if (step > 100) and (step % 5 == 0):
@@ -25,6 +25,7 @@ def run_maze():
 
             # swap observation
             observation = observation_
+
 
             env.update_env(episode, step_counter,done,reward)
             reward_sum+=reward

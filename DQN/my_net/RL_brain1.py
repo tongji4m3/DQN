@@ -292,5 +292,40 @@ class SumDQN:
         # else:
         #     action = np.random.randint(0, self.n_actions)
         actions_value = self.sess.run(self.q_eval, feed_dict={self.s: observation})
-        action = np.argmax(actions_value)
-        return action
+
+        #按优先级排列的操作
+        actions_value1=np.array(
+            [
+                [0,0,0,0],
+                [0,0,0,0],
+            ]
+            ,dtype=np.float32
+        )
+
+
+        #print(actions_value[0])
+        #对数据进行处理
+        value_list=sorted(actions_value[0],reverse=True)
+        #print(value_list)
+        for i in range(len(value_list)):
+            actions_value1[1][i]=value_list[i]
+            for j in range(len(actions_value[0])):
+                if actions_value1[1][i]==actions_value[0][j]:
+                    actions_value1[0][i]=j
+
+        for i in range(len(value_list)):
+            if(actions_value1[0][i]==3):
+                temp=actions_value1[0][i]
+                j=i
+            if(actions_value1[0][i]==2):
+                temp1=actions_value1[0][i]
+                j1=i
+            if(i==3):
+                actions_value1[0][j1]=temp
+                actions_value1[0][j]=temp1
+        #print(actions_value)
+        print(actions_value1)
+        #action = np.argmax(actions_value)
+
+        #最后得到从大到小排列，且对应action的二维数组
+        return actions_value1
