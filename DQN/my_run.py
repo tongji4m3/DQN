@@ -11,7 +11,7 @@ def run_maze():
         observation = env.reset()
 
         #人流量随机改变
-        #env.resetPeople()
+        env.resetPeople()
 
         # if (episode % 10 == 0):
         #     env.resetPeople()
@@ -39,6 +39,8 @@ def run_maze():
                 break
             step += 1
             step_counter+=1
+
+
 
         if (episode%10==0) &(episode!=0):
             env.Reward_memory(episode/10,reward_sum/10,step_sum/10)

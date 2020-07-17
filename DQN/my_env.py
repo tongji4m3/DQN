@@ -385,15 +385,21 @@ class Env:
     # 更新位置,获取奖励
     def minRoad(self):
         minRoadReward = 0
-        for i in range(self.minRoadMaze_n - 1):
-            temp_x = self.minRoadMaze[i][0] * self.n + self.minRoadMaze[i][1]
-            temp_y = self.minRoadMaze[i + 1][0] * self.n + self.minRoadMaze[i + 1][1]
-            print(temp_x, temp_y)
-            temp = -1 * (self.distinction_weight * self.distinction[temp_x][temp_y] + self.people_weight *
-                         self.people[temp_x][temp_y])
-            minRoadReward += temp
-        minRoadReward += self.target_reward
-        print(minRoadReward)
+        for i in range(100):
+            minRoadReward = 0
+            self.resetPeople()
+            for i in range(self.minRoadMaze_n - 1):
+
+                temp_x = self.minRoadMaze[i][0] * self.n + self.minRoadMaze[i][1]
+                temp_y = self.minRoadMaze[i + 1][0] * self.n + self.minRoadMaze[i + 1][1]
+                print(temp_x, temp_y)
+                temp = -1 * (self.distinction_weight * self.distinction[temp_x][temp_y] + self.people_weight *
+                             self.people[temp_x][temp_y])
+                print(temp)
+                minRoadReward += temp
+            minRoadReward += self.target_reward
+            self.min_road_reward.append(minRoadReward)
+            print(minRoadReward)
         return minRoadReward
 
     def step(self, action):
@@ -567,9 +573,10 @@ class Env:
         #     plt.scatter(self.array_x[i],self.array_y[i],color='black')
 
         minReward = self.minRoad()
-        print(minReward)
-        for i in range(100):
-            self.min_road_reward.append(minReward)
+        # print(minReward)
+        # self.min_road_reward=minReward
+        # for i in range(100):
+        #     self.min_road_reward.append(minReward)
 
         # 画奖励曲线
         plt.plot(self.array_x, self.array_y)

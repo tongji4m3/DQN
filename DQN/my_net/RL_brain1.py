@@ -313,16 +313,17 @@ class SumDQN:
                 if actions_value1[1][i]==actions_value[0][j]:
                     actions_value1[0][i]=j
 
-        for i in range(len(value_list)):
-            if(actions_value1[0][i]==3):
-                temp=actions_value1[0][i]
-                j=i
-            if(actions_value1[0][i]==2):
-                temp1=actions_value1[0][i]
-                j1=i
-            if(i==3):
-                actions_value1[0][j1]=temp
-                actions_value1[0][j]=temp1
+        #好像就是0 1 2 3
+        # for i in range(len(value_list)):
+        #     if(actions_value1[0][i]==3):
+        #         temp=actions_value1[0][i]
+        #         j=i
+        #     if(actions_value1[0][i]==2):
+        #         temp1=actions_value1[0][i]
+        #         j1=i
+        #     if(i==3):
+        #         actions_value1[0][j1]=temp
+        #         actions_value1[0][j]=temp1
         #print(actions_value)
         print(actions_value1)
         #action = np.argmax(actions_value)
