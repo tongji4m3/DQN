@@ -189,7 +189,7 @@ class Env:
         # 计算奖励用的函数参数
         self.distinction_weight = 2
         self.people_weight = 2
-        self.target_reward = 160
+        self.target_reward = 30
 
         # 最短路径
         self.minRoadMaze = np.array(
@@ -351,6 +351,19 @@ class Env:
 
             self.people = newPeople[:]
 
+    def get_speed(self,people):
+        speed=2
+        if (people>=5) and (people<7):
+            speed=3
+        elif (people>=7) and (people<9):
+            speed=2
+        elif (people>=9) and (people<=10):
+            speed=1
+        elif (people>10):
+            speed=0.1
+        return speed
+
+
     def update_env(self, episode, step_counter, done, reward):
         # print(self.position[0],self.position[1])
 
@@ -371,15 +384,16 @@ class Env:
 
                 temp_x = self.minRoadMaze[i][0] * self.n + self.minRoadMaze[i][1]
                 temp_y = self.minRoadMaze[i + 1][0] * self.n + self.minRoadMaze[i + 1][1]
-                print(temp_x, temp_y)
+                # print(temp_x, temp_y)
+                # reward现在拟化为时间，公式为:reward=-1*(路径距离/人流量值对应速度）
+                temp = -1 * (self.distinction[temp_x][temp_y] / self.get_speed(self.people[temp_x][temp_y]))
+                # temp = -1 * (self.distinction_weight * self.distinction[temp_x][temp_y] + self.people_weight *
+                #              self.people[temp_x][temp_y])
 
-                temp = -1 * (self.distinction_weight * self.distinction[temp_x][temp_y] + self.people_weight *
-                             self.people[temp_x][temp_y])
-                print(self.people[temp_x][temp_y])
                 minRoadReward += temp
             minRoadReward += self.target_reward
             self.min_road_reward.append(minRoadReward)
-            # print(minRoadReward)
+            print(minRoadReward)
         return minRoadReward
 
     def step(self, action):
@@ -409,9 +423,13 @@ class Env:
             transformed_position_y = self.position[0] * self.n + self.position[1]
             print(pre_position_x, pre_position_y, self.position[0], self.position[1])
             # reward=-1*A*当前距离+B*人流量
-            reward = -1 * (self.distinction_weight * self.distinction[transformed_position_x][
-                transformed_position_y] + self.people_weight * self.people[transformed_position_x][
-                               transformed_position_y])
+            # reward现在拟化为时间，公式为:reward=-1*(路径距离/人流量值对应速度）
+            reward = -1 * (self.distinction[transformed_position_x][
+                transformed_position_y] /self.get_speed(self.people[transformed_position_x][
+                               transformed_position_y]))
+            # reward = -1 * (self.distinction_weight * self.distinction[transformed_position_x][
+            #     transformed_position_y] + self.people_weight * self.people[transformed_position_x][
+            #                    transformed_position_y])
             print(reward)
             reward += self.target_reward
             done = True
@@ -423,10 +441,14 @@ class Env:
             transformed_position_x = pre_position_x * self.n + pre_position_y
             transformed_position_y = self.position[0] * self.n + self.position[1]
             print(pre_position_x,pre_position_y,self.position[0],self.position[1])
+            # reward现在拟化为时间，公式为:reward=-1*(路径距离/人流量值对应速度）
+            reward = -1 * (self.distinction[transformed_position_x][
+                               transformed_position_y] / self.get_speed(self.people[transformed_position_x][
+                                                                            transformed_position_y]))
             # reward=-1*A*当前距离+B*人流量
-            reward = -1 * (self.distinction_weight * self.distinction[transformed_position_x][
-                transformed_position_y] + self.people_weight * self.people[transformed_position_x][
-                               transformed_position_y])
+            # reward = -1 * (self.distinction_weight * self.distinction[transformed_position_x][
+            #     transformed_position_y] + self.people_weight * self.people[transformed_position_x][
+            #                    transformed_position_y])
             print(reward)
             done = False
 
@@ -562,7 +584,7 @@ class Env:
         plt.plot(self.array_x, self.array_y)
         plt.plot(self.array_x, self.min_road_reward)
         plt.xlim((0, 100))
-        plt.ylim((-1000, 50))
+        plt.ylim((-150, 50))
         plt.ylabel('Avg Reward')
         plt.xlabel('Iterations')
         plt.show()
