@@ -229,8 +229,10 @@ class Env:
     # 实现人流量动态改变
     def resetPeople(self):
         # move = random.randint(0, 1)  # 这个训练回合什么都不做
+        movePossibility=0.5
         move = 1
         N = self.m * self.n
+        maxPeople = 50
         if move:
             # ret = random.random() #-->生成一个[0, 1)之间的小数
 
@@ -247,13 +249,17 @@ class Env:
                     for pathPeople in range(self.people[i + 1][i]):
                         #设置数组，表示不同的概率，最终数组储存的为每个方向的概率区间的右值
                         array=[0,0,0,0]
+                        moveArray=[0,0,0,0]
                         array[0]=self.people[i+1][i]
                         if i - self.n >= 0 and self.people[i][i - self.n] > -1:
                             array[1] = self.people[i][i - self.n]
+                            moveArray[1]=1
                         if i + self.n < N and self.people[i][i + self.n] > -1:
                             array[2] = self.people[i][i + self.n]
+                            moveArray[2] = 1
                         if i - 1 >= 0 and self.people[i][i - 1] > -1:
                             array[3] = self.people[i][i - 1]
+                            moveArray[3] = 1
                         total = 1e-6
                         for k in range(len(array)):
                             total += array[k]
@@ -271,23 +277,40 @@ class Env:
                         if direction == 1:
                             newPeople[i][i - self.n] += 1
                             newPeople[i + 1][i] -= 1
-                        if direction == 2:
+                        elif direction == 2:
                             newPeople[i][i + self.n] += 1
                             newPeople[i + 1][i] -= 1
-                        if direction == 3:
+                        elif direction == 3:
                             newPeople[i][i - 1] += 1
                             newPeople[i + 1][i] -= 1
+                        else:
+                            if self.people[i+1][i] >= maxPeople and random.random()<movePossibility:
+                                direction = random.randint(1,4)
+                                if direction == 1 and moveArray[1] == 1:
+                                    newPeople[i][i - self.n] += 1
+                                    newPeople[i + 1][i] -= 1
+                                elif direction == 2 and moveArray[2] == 1:
+                                    newPeople[i][i + self.n] += 1
+                                    newPeople[i + 1][i] -= 1
+                                elif direction == 3 and moveArray[3] == 1:
+                                    newPeople[i][i - 1] += 1
+                                    newPeople[i + 1][i] -= 1
+
                     # 对于i→i+1
                     for pathPeople in range(self.people[i][i + 1]):
                         # 设置数组，表示不同的概率，最终数组储存的为每个方向的概率区间的右值
                         array = [0, 0, 0, 0]
+                        moveArray = [0, 0, 0, 0]
                         array[0] = self.people[i + 1][i]
                         if i + 1 - self.n >= 0 and self.people[i + 1][i + 1 - self.n] > -1:
                             array[1] = self.people[i + 1][i + 1 - self.n]
+                            moveArray[1] = 1
                         if i + 1 + self.n < N and self.people[i + 1][i + 1 + self.n] > -1:
                             array[2] = self.people[i + 1][i + 1 + self.n]
+                            moveArray[2] = 1
                         if i + 2 < N and self.people[i + 1][i + 2] > -1:
                             array[3] = self.people[i + 1][i + 2]
+                            moveArray[3] = 1
                         total = 1e-6
                         for k in range(len(array)):
                             total += array[k]
@@ -306,12 +329,24 @@ class Env:
                         if direction == 1:
                             newPeople[i + 1][i + 1 - self.n] += 1
                             newPeople[i][i + 1] -= 1
-                        if direction == 2:
+                        elif direction == 2:
                             newPeople[i + 1][i + 1 + self.n] += 1
                             newPeople[i][i + 1] -= 1
-                        if direction == 3:
+                        elif direction == 3:
                             newPeople[i + 1][i + 2] += 1
                             newPeople[i][i + 1] -= 1
+                        else:
+                            if self.people[i][i + 1] >= maxPeople and random.random()<movePossibility:
+                                direction = random.randint(1,4)
+                                if direction == 1 and moveArray[1] == 1:
+                                    newPeople[i + 1][i + 1 - self.n] += 1
+                                    newPeople[i][i + 1] -= 1
+                                elif direction == 2 and moveArray[2] == 1:
+                                    newPeople[i + 1][i + 1 + self.n] += 1
+                                    newPeople[i][i + 1] -= 1
+                                elif direction == 3 and moveArray[3] == 1:
+                                    newPeople[i + 1][i + 2] += 1
+                                    newPeople[i][i + 1] -= 1
 
                 if (i + self.n < N and (self.people[i][i + self.n] > 0 or self.people[i + self.n][i] > 0)):
                     # 对路径上的每个人分别随机走,共4种选择(不一定没种都能走)
@@ -321,13 +356,17 @@ class Env:
                     for pathPeople in range(self.people[i + self.n][i]):
                         # 设置数组，表示不同的概率，最终数组储存的为每个方向的概率区间的右值
                         array = [0, 0, 0, 0]
+                        moveArray = [0, 0, 0, 0]
                         array[0] = self.people[i + 1][i]
                         if i - 1 >= 0 and self.people[i][i - 1] > -1:
                             array[1] = self.people[i][i - 1]
+                            moveArray[1]=1
                         if i + self.n < N and self.people[i][i + 1] > -1:
                             array[2] = self.people[i][i + 1]
+                            moveArray[2] = 1
                         if i - self.n >= 0 and self.people[i][i - self.n] > -1:
                             array[3] = self.people[i][i - self.n]
+                            moveArray[3] = 1
                         total = 1e-6
                         for k in range(len(array)):
                             total += array[k]
@@ -345,24 +384,40 @@ class Env:
                         if direction == 1:
                             newPeople[i][i - 1] += 1
                             newPeople[i + self.n][i] -= 1
-                        if direction == 2:
+                        elif direction == 2:
                             newPeople[i][i + 1] += 1
                             newPeople[i + self.n][i] -= 1
-                        if direction == 3:
+                        elif direction == 3:
                             newPeople[i][i - self.n] += 1
                             newPeople[i + self.n][i] -= 1
+                        else:
+                            if self.people[i + self.n][i] >= maxPeople and random.random()<movePossibility:
+                                direction = random.randint(1,4)
+                                if direction == 1 and moveArray[1] == 1:
+                                    newPeople[i][i - 1] += 1
+                                    newPeople[i + self.n][i] -= 1
+                                elif direction == 2 and moveArray[2] == 1:
+                                    newPeople[i][i + 1] += 1
+                                    newPeople[i + self.n][i] -= 1
+                                elif direction == 3 and moveArray[3] == 1:
+                                    newPeople[i][i - self.n] += 1
+                                    newPeople[i + self.n][i] -= 1
 
                     # 对于i→i+self.n
                     for pathPeople in range(self.people[i][i + self.n]):
                         # 设置数组，表示不同的概率，最终数组储存的为每个方向的概率区间的右值
                         array = [0, 0, 0, 0]
+                        moveArray = [0, 0, 0, 0]
                         array[0] = self.people[i + 1][i]
                         if self.people[i + self.n][i + self.n - 1] > -1:
                             array[1] = self.people[i + self.n][i + self.n - 1]
+                            moveArray[1] = 1
                         if i + self.n + 1 < N and self.people[i + self.n][i + self.n + 1] > -1:
                             array[2] = self.people[i + self.n][i + self.n + 1]
+                            moveArray[2] = 1
                         if i + 2 * self.n < N and self.people[i + self.n][i + 2 * self.n] > -1:
                             array[3] = self.people[i + self.n][i + 2 * self.n]
+                            moveArray[3] = 1
                         total = 1e-6
                         for k in range(len(array)):
                             total += array[k]
@@ -381,12 +436,24 @@ class Env:
                         if direction == 1:
                             newPeople[i + self.n][i + self.n - 1] += 1
                             newPeople[i][i + self.n] -= 1
-                        if direction == 2:
+                        elif direction == 2:
                             newPeople[i + self.n][i + self.n + 1] += 1
                             newPeople[i][i + self.n] -= 1
-                        if direction == 3:
+                        elif direction == 3:
                             newPeople[i + self.n][i + 2 * self.n] += 1
                             newPeople[i][i + self.n] -= 1
+                        else:
+                            if self.people[i][i + self.n] >= maxPeople and random.random()<movePossibility:
+                                direction = random.randint(1,4)
+                                if direction == 1 and moveArray[1] == 1:
+                                    newPeople[i + self.n][i + self.n - 1] += 1
+                                    newPeople[i][i + self.n] -= 1
+                                elif direction == 2 and moveArray[2] == 1:
+                                    newPeople[i + self.n][i + self.n + 1] += 1
+                                    newPeople[i][i + self.n] -= 1
+                                elif direction == 3 and moveArray[3] == 1:
+                                    newPeople[i + self.n][i + 2 * self.n] += 1
+                                    newPeople[i][i + self.n] -= 1
 
             # count=0
             # for i in range(self.m * self.n):
