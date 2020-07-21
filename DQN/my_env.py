@@ -231,8 +231,9 @@ class Env:
         # move = random.randint(0, 1)  # 这个训练回合什么都不做
         move = 1
         N = self.m * self.n
-        nn = self.n
         if move:
+            # ret = random.random() #-->生成一个[0, 1)之间的小数
+
             # 改变放在新人流量矩阵上,每次整体更新,防止有人走了多步
             newPeople = self.people[:]
             for i in range(N):
@@ -244,102 +245,148 @@ class Env:
 
                     # 对于i+1→i
                     for pathPeople in range(self.people[i + 1][i]):
-                        change = False  # 代表这个人是否已经走了
-                        while change != True:
-                            direction = random.randint(0, 3)
-                            if direction == 0:
-                                change = True
-                            if direction == 1:
-                                # 如果左上路径确实存在
-                                if i - self.n >= 0 and self.people[i][i - self.n] > -1:
-                                    newPeople[i][i - self.n] += 1
-                                    newPeople[i + 1][i] -= 1
-                                    change = True
-                            if direction == 2:
-                                # 如果左下路径确实存在
-                                if i + self.n < N and self.people[i][i + self.n] > -1:
-                                    newPeople[i][i + self.n] += 1
-                                    newPeople[i + 1][i] -= 1
-                                    change = True
-                            if direction == 3:
-                                # 如果左路径确实存在
-                                if i - 1 >= 0 and self.people[i][i - 1] > -1:
-                                    newPeople[i][i - 1] += 1
-                                    newPeople[i + 1][i] -= 1
-                                    change = True
+                        #设置数组，表示不同的概率，最终数组储存的为每个方向的概率区间的右值
+                        array=[0,0,0,0]
+                        array[0]=self.people[i+1][i]
+                        if i - self.n >= 0 and self.people[i][i - self.n] > -1:
+                            array[1] = self.people[i][i - self.n]
+                        if i + self.n < N and self.people[i][i + self.n] > -1:
+                            array[2] = self.people[i][i + self.n]
+                        if i - 1 >= 0 and self.people[i][i - 1] > -1:
+                            array[3] = self.people[i][i - 1]
+                        total = 1e-6
+                        for k in range(len(array)):
+                            total += array[k]
+                        array[0]=array[0]/total
+                        for k in range(1,len(array)):
+                            array[k]=array[k]/total+array[k-1]
+                            #print(array[k])
+                        #方向判断的值为0-1之间的随机数
+                        direction = random.random()
+                        #判断随机方向属于哪个区间
+                        for k in range(len(array)):
+                            if direction<=array[k]:
+                                direction=k
+                                break
+                        if direction == 1:
+                            newPeople[i][i - self.n] += 1
+                            newPeople[i + 1][i] -= 1
+                        if direction == 2:
+                            newPeople[i][i + self.n] += 1
+                            newPeople[i + 1][i] -= 1
+                        if direction == 3:
+                            newPeople[i][i - 1] += 1
+                            newPeople[i + 1][i] -= 1
                     # 对于i→i+1
                     for pathPeople in range(self.people[i][i + 1]):
-                        change = False
-                        while change != True:
-                            direction = random.randint(0, 3)
-                            if direction == 0:
-                                change = True
-                            if direction == 1:
-                                # 如果右上
-                                if i + 1 - self.n >= 0 and self.people[i + 1][i + 1 - self.n] > -1:
-                                    newPeople[i + 1][i + 1 - self.n] += 1
-                                    newPeople[i][i + 1] -= 1
-                                    change = True
-                            if direction == 2:
-                                # 如果右下
-                                if i + 1 + self.n < N and self.people[i + 1][i + 1 + self.n] > -1:
-                                    newPeople[i + 1][i + 1 + self.n] += 1
-                                    newPeople[i][i + 1] -= 1
-                                    change = True
-                            if direction == 3:
-                                if i + 2 < N and self.people[i + 1][i + 2] > -1:
-                                    newPeople[i + 1][i + 2] += 1
-                                    newPeople[i][i + 1] -= 1
-                                    change = True
+                        # 设置数组，表示不同的概率，最终数组储存的为每个方向的概率区间的右值
+                        array = [0, 0, 0, 0]
+                        array[0] = self.people[i + 1][i]
+                        if i + 1 - self.n >= 0 and self.people[i + 1][i + 1 - self.n] > -1:
+                            array[1] = self.people[i + 1][i + 1 - self.n]
+                        if i + 1 + self.n < N and self.people[i + 1][i + 1 + self.n] > -1:
+                            array[2] = self.people[i + 1][i + 1 + self.n]
+                        if i + 2 < N and self.people[i + 1][i + 2] > -1:
+                            array[3] = self.people[i + 1][i + 2]
+                        total = 1e-6
+                        for k in range(len(array)):
+                            total += array[k]
+                        array[0] = array[0] / total
+                        for k in range(1, len(array)):
+                            array[k] = array[k] / total + array[k - 1]
+                            # print(array[k])
+                        # 方向判断的值为0-1之间的随机数
+                        direction = random.random()
+                        # 判断随机方向属于哪个区间
+                        for k in range(len(array)):
+                            if direction <= array[k]:
+                                direction = k
+                                break
+                        
+                        if direction == 1:
+                            newPeople[i + 1][i + 1 - self.n] += 1
+                            newPeople[i][i + 1] -= 1
+                        if direction == 2:
+                            newPeople[i + 1][i + 1 + self.n] += 1
+                            newPeople[i][i + 1] -= 1
+                        if direction == 3:
+                            newPeople[i + 1][i + 2] += 1
+                            newPeople[i][i + 1] -= 1
 
-                if (i + nn < N and (self.people[i][i + nn] > 0 or self.people[i + nn][i] > 0)):
+                if (i + self.n < N and (self.people[i][i + self.n] > 0 or self.people[i + self.n][i] > 0)):
                     # 对路径上的每个人分别随机走,共4种选择(不一定没种都能走)
                     # 不动,左，右，上/下
                     # 0   1   2  3
-                    # 对于i+nn→i
-                    for pathPeople in range(self.people[i + nn][i]):
-                        change = False
-                        while change != True:
-                            direction = random.randint(0, 3)
-                            if direction == 0:
-                                change = True
-                            if direction == 1:
-                                if i - 1 >= 0 and self.people[i][i - 1] > -1:
-                                    newPeople[i][i - 1] += 1
-                                    newPeople[i + nn][i] -= 1
-                                    change = True
-                            if direction == 2:
-                                if i + nn < N and self.people[i][i + 1] > -1:
-                                    newPeople[i][i + 1] += 1
-                                    newPeople[i + nn][i] -= 1
-                                    change = True
-                            if direction == 3:
-                                if i - nn >= 0 and self.people[i][i - nn] > -1:
-                                    newPeople[i][i - nn] += 1
-                                    newPeople[i + nn][i] -= 1
-                                    change = True
-                    # 对于i→i+nn
-                    for pathPeople in range(self.people[i][i + nn]):
-                        change = False
-                        while change != True:
-                            direction = random.randint(0, 3)
-                            if direction == 0:
-                                change = True
-                            if direction == 1:
-                                if self.people[i + nn][i + nn - 1] > -1:
-                                    newPeople[i + nn][i + nn - 1] += 1
-                                    newPeople[i][i + nn] -= 1
-                                    change = True
-                            if direction == 2:
-                                if i + nn + 1 < N and self.people[i + nn][i + nn + 1] > -1:
-                                    newPeople[i + nn][i + nn + 1] += 1
-                                    newPeople[i][i + nn] -= 1
-                                    change = True
-                            if direction == 3:
-                                if i + 2 * nn < N and self.people[i + nn][i + 2 * nn] > -1:
-                                    newPeople[i + nn][i + 2 * nn] += 1
-                                    newPeople[i][i + nn] -= 1
-                                    change = True
+                    # 对于i+self.n→i
+                    for pathPeople in range(self.people[i + self.n][i]):
+                        # 设置数组，表示不同的概率，最终数组储存的为每个方向的概率区间的右值
+                        array = [0, 0, 0, 0]
+                        array[0] = self.people[i + 1][i]
+                        if i - 1 >= 0 and self.people[i][i - 1] > -1:
+                            array[1] = self.people[i][i - 1]
+                        if i + self.n < N and self.people[i][i + 1] > -1:
+                            array[2] = self.people[i][i + 1]
+                        if i - self.n >= 0 and self.people[i][i - self.n] > -1:
+                            array[3] = self.people[i][i - self.n]
+                        total = 1e-6
+                        for k in range(len(array)):
+                            total += array[k]
+                        array[0] = array[0] / total
+                        for k in range(1, len(array)):
+                            array[k] = array[k] / total + array[k - 1]
+                            # print(array[k])
+                        # 方向判断的值为0-1之间的随机数
+                        direction = random.random()
+                        # 判断随机方向属于哪个区间
+                        for k in range(len(array)):
+                            if direction <= array[k]:
+                                direction = k
+                                break
+                        if direction == 1:
+                            newPeople[i][i - 1] += 1
+                            newPeople[i + self.n][i] -= 1
+                        if direction == 2:
+                            newPeople[i][i + 1] += 1
+                            newPeople[i + self.n][i] -= 1
+                        if direction == 3:
+                            newPeople[i][i - self.n] += 1
+                            newPeople[i + self.n][i] -= 1
+
+                    # 对于i→i+self.n
+                    for pathPeople in range(self.people[i][i + self.n]):
+                        # 设置数组，表示不同的概率，最终数组储存的为每个方向的概率区间的右值
+                        array = [0, 0, 0, 0]
+                        array[0] = self.people[i + 1][i]
+                        if self.people[i + self.n][i + self.n - 1] > -1:
+                            array[1] = self.people[i + self.n][i + self.n - 1]
+                        if i + self.n + 1 < N and self.people[i + self.n][i + self.n + 1] > -1:
+                            array[2] = self.people[i + self.n][i + self.n + 1]
+                        if i + 2 * self.n < N and self.people[i + self.n][i + 2 * self.n] > -1:
+                            array[3] = self.people[i + self.n][i + 2 * self.n]
+                        total = 1e-6
+                        for k in range(len(array)):
+                            total += array[k]
+                        array[0] = array[0] / total
+                        for k in range(1, len(array)):
+                            array[k] = array[k] / total + array[k - 1]
+                            # print(array[k])
+                        # 方向判断的值为0-1之间的随机数
+                        direction = random.random()
+                        # 判断随机方向属于哪个区间
+                        for k in range(len(array)):
+                            if direction <= array[k]:
+                                direction = k
+                                break
+                        #判断       
+                        if direction == 1:
+                            newPeople[i + self.n][i + self.n - 1] += 1
+                            newPeople[i][i + self.n] -= 1
+                        if direction == 2:
+                            newPeople[i + self.n][i + self.n + 1] += 1
+                            newPeople[i][i + self.n] -= 1
+                        if direction == 3:
+                            newPeople[i + self.n][i + 2 * self.n] += 1
+                            newPeople[i][i + self.n] -= 1
 
             # count=0
             # for i in range(self.m * self.n):
@@ -372,7 +419,8 @@ class Env:
             print('\r{}'.format(interaction), '')
             print('\r                           ', '')
 
-            time.sleep(self.fresh_time)
+            #time.sleep(self.fresh_time)
+            print(self.people)
 
     # 更新位置,获取奖励
     def minRoad(self):
@@ -393,7 +441,7 @@ class Env:
                 minRoadReward += temp
             minRoadReward += self.target_reward
             self.min_road_reward.append(minRoadReward)
-            print(minRoadReward)
+            #print(minRoadReward)
         return minRoadReward
 
     def step(self, action):
@@ -430,7 +478,7 @@ class Env:
             # reward = -1 * (self.distinction_weight * self.distinction[transformed_position_x][
             #     transformed_position_y] + self.people_weight * self.people[transformed_position_x][
             #                    transformed_position_y])
-            print(reward)
+            #print(reward)
             reward += self.target_reward
             done = True
         # elif  self.maze[self.position[0]][self.position[1]]==-1:
@@ -440,7 +488,7 @@ class Env:
             # 转化为邻接矩阵的坐标
             transformed_position_x = pre_position_x * self.n + pre_position_y
             transformed_position_y = self.position[0] * self.n + self.position[1]
-            print(pre_position_x,pre_position_y,self.position[0],self.position[1])
+            #print(pre_position_x,pre_position_y,self.position[0],self.position[1])
             # reward现在拟化为时间，公式为:reward=-1*(路径距离/人流量值对应速度）
             reward = -1 * (self.distinction[transformed_position_x][
                                transformed_position_y] / self.get_speed(self.people[transformed_position_x][
@@ -449,7 +497,7 @@ class Env:
             # reward = -1 * (self.distinction_weight * self.distinction[transformed_position_x][
             #     transformed_position_y] + self.people_weight * self.people[transformed_position_x][
             #                    transformed_position_y])
-            print(reward)
+            #print(reward)
             done = False
 
         # 当前位置 之后再更新,不然会覆盖奖励
@@ -475,12 +523,12 @@ class Env:
         # self.maze[self.position[0]][self.position[1]]=0
         pre_position_x = self.position[0]
         pre_position_y = self.position[1]
-        print(self.pre_position[0], self.pre_position[1])
-        print(self.position[0], self.position[1])
+        #print(self.pre_position[0], self.pre_position[1])
+        #print(self.position[0], self.position[1])
         #循环选择，保证值最大，且不往返，不撞墙
         for i in range(len(actions_value[1])):
             action = actions_value[0][i]
-            print(action)
+            #print(action)
             if action == 0 and (self.position[0] - 1 != self.pre_position[0]):
                 # if self.position[0] > 0 & (self.position[0] - 1 != self.pre_position[0]):
                 if self.position[0] > 0 :
