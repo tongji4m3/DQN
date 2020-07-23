@@ -13,8 +13,8 @@ def run_maze():
         #人流量随机改变
         #env.resetPeople()
 
-        # if (episode % 10 == 0):
-        #     env.resetPeople()
+        if (episode % 20 == 0):
+            env.resetPeople()
 
         step_counter = 1
         while True:

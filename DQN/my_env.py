@@ -481,23 +481,22 @@ class Env:
         for i in range(N):
             self.people[i][i]=0
 
-        print(self.people)
+        for i in range(N):
+            for j in range(N):
+                if self.people[i][j]!=-1 and self.people[i][j]!=0:
+                    print(self.people[i][j])
 
 
 
     def get_speed(self,people):
-        # speed=2
-        # if (people>=5) and (people<7):
-        #     speed=3
-        # elif (people>=7) and (people<9):
-        #     speed=2
-        # elif (people>=9) and (people<=10):
-        #     speed=1
-        # elif (people>10):
-        #     speed=0.1
-        #return speed
-        speed=(100-people)*0.5
-        if speed<=0:
+        speed=2
+        if (people>=0) and (people<17):
+            speed=3
+        elif (people>=17) and (people<29):
+            speed=2
+        elif (people>=29) and (people<=50):
+            speed=1
+        elif (people>50):
             speed=0.1
         return speed
 
