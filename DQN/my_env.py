@@ -481,11 +481,11 @@ class Env:
         for i in range(N):
             self.people[i][i]=0
 
-        for i in range(N):
-            for j in range(N):
-                if self.people[i][j]!=-1 and self.people[i][j]!=0:
-                    print(self.people[i][j])
-
+        # for i in range(N):
+        #     for j in range(N):
+        #         if self.people[i][j]!=-1 and self.people[i][j]!=0:
+        #             print(self.people[i][j])
+        print(self.people)
 
 
     def get_speed(self,people):
@@ -517,7 +517,11 @@ class Env:
         minRoadReward = 0
         for i in range(100):
             minRoadReward = 0
-            # self.resetPeople()
+
+            if (i % 2 == 0):
+                self.resetPeople()
+
+            #self.resetPeople()
             for i in range(self.minRoadMaze_n - 1):
 
                 temp_x = self.minRoadMaze[i][0] * self.n + self.minRoadMaze[i][1]
