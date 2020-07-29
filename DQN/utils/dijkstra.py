@@ -2,7 +2,7 @@ import sys
 import numpy as np
 import DQN.my_env as my_env
 
-# 传入参数为距离矩阵
+# 传入参数为邻接距离
 def Dijkstra(distinction):
     N = distinction.shape[0]  # 节点个数
     MAX = sys.maxsize  # 初始为最大值
@@ -30,7 +30,7 @@ def Dijkstra(distinction):
                 min_dist = weight
                 min_point = i
 
-    print("左上角到右下角的距离为:",dists[N - 1])
+    #print("左上角到右下角的距离为:",dists[N - 1])
 
     return parents
 
@@ -52,7 +52,12 @@ if __name__ == '__main__':
     parents=Dijkstra(distinction)
     N=distinction.shape[0]
     paths=paths(parents,N-1)
-    print("路径为:")
-    for i in range(len(paths)):
-        print("[",paths[i]//n,",",paths[i]%n,"]",",")
+    print(paths)
 
+    #最短路径
+    minRoadMaze=np.zeros([len(paths),2],dtype=int)
+    for i in range(len(paths)):
+        minRoadMaze[i][0]=paths[i]//n
+        minRoadMaze[i][1]=paths[i]%n
+
+    print(minRoadMaze)
