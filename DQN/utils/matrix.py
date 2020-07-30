@@ -9,6 +9,7 @@ class Matrix:
         self.n = 10
         self.size = self.m * self.n
         self.maze = np.zeros([self.m, self.n])
+        self.maze[9][9] = 1  # 终点为1
         self.random_value = 5
         self.random_const = 5
         self.distinction = graph.Graph(self.size)
