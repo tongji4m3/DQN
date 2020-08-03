@@ -20,8 +20,11 @@ class Vertex(object):
         return self.id
 
     #获取到邻居的权重
-    def getWeight(self,nbr):
-        return self.connectedTo[nbr]
+    def getWeight(self, nbr):
+        try:
+            return self.connectedTo[nbr]
+        except Exception as err:
+            return -1
 
 #定义图类
 class Graph(object):
@@ -61,6 +64,7 @@ class Graph(object):
     def getTwoPointsEdge(self,s,e):
         start=self.getVertex(s)
         end=self.getVertex(e)
+        if start==end: return 0
         cost=start.getWeight(end)
         return cost
 
@@ -100,3 +104,8 @@ class Graph(object):
         start=self.getVertex(s)
         end=self.getVertex(e)
         start.connectedTo[end] = newCost
+
+    # 获得图中所有的点
+    def getVertList(self):
+        # print(self.vertList.keys())
+        return self.vertList.keys()
