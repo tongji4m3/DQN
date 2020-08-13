@@ -86,6 +86,7 @@ class HierarchicalDqnAgent(object):
 
         return np.copy(controller_state)
 
+    # 针对低层的controller
     def intrinsic_reward(self, state, subgoal_index):
         # Intrinsically rewards the controller - this is the critic in the h-DQN algorithm.
         if self.subgoal_completed(state, subgoal_index):
@@ -136,6 +137,7 @@ class HierarchicalDqnAgent(object):
         intrinsic_reward = self.intrinsic_reward(next_state, self._curr_subgoal)
         # 全员布尔
         subgoal_completed = self.subgoal_completed(next_state, self._curr_subgoal)
+        # 整体目标是否到达，terminal指的是最终目标点
         intrinsic_terminal = subgoal_completed or terminal
 
         # Store the controller transition in memory.存储控制器传递
@@ -143,14 +145,15 @@ class HierarchicalDqnAgent(object):
         self._controller.store(intrinsic_state, action,
             intrinsic_reward, intrinsic_next_state, intrinsic_terminal, eval)
 
-        # meta传进去的是地图的子目标的目标
         self._meta_controller_reward += reward
 
         if terminal and not eval:
             self._episode += 1
 
+        # 如果子目标到达或者到达最终的重点
         if subgoal_completed or terminal:
 
+            # 存进去
             # Store the meta-controller transition in memory.
             meta_controller_state = np.copy(self._meta_controller_state)
             next_meta_controller_state = np.copy(self.get_meta_controller_state(next_state))
@@ -159,6 +162,7 @@ class HierarchicalDqnAgent(object):
                 self._meta_controller_reward, next_meta_controller_state,
                 terminal, eval)
 
+            # 重新初始
             # Reset the current meta-controller state and current subgoal to be None
             # since the current subgoal is finished. Also reset the meta-controller's reward.
             self._meta_controller_state = None
@@ -166,9 +170,10 @@ class HierarchicalDqnAgent(object):
             self._meta_controller_reward = 0
             self._intrinsic_time_step = 0
 
+    # 采样
     def sample(self, state):
         """Samples an action from the hierarchical DQN agent.
-           Samples a subgoal if necessary from the meta-controller and samples a primitive action
+           Samples a subgoal if necessary from the meta-controller and samples a primitive action原语
            from the controller.
 
            Args:
@@ -192,8 +197,10 @@ class HierarchicalDqnAgent(object):
         # or a subgoal has just been completed.
         if self._meta_controller_state is None:
             self._meta_controller_state = self.get_meta_controller_state(state)
+            # metacontroller根据当前位置选择了一个子目标
             self._curr_subgoal = self._meta_controller.sample([self._meta_controller_state])
 
+        # 把当前位置和子目标同时考虑
         controller_state = self.get_controller_state(state, self._curr_subgoal)
         action = self._controller.sample(controller_state)
 
