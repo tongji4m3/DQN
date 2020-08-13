@@ -1,6 +1,6 @@
 import numpy as np
 import random
-from replay_buffer import ReplayBuffer
+from DQN.hierarchical_dqn.replay_buffer import ReplayBuffer
 import tensorflow as tf
 
 class DqnAgent(object):
