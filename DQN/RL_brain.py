@@ -155,6 +155,8 @@ class SumDQN:
 
         self.learn_step_counter = 0
 
+        self._q_values=0
+
         self._build_net()
         t_params = tf.get_collection('target_net_params')
         e_params = tf.get_collection('eval_net_params')
@@ -309,3 +311,16 @@ class SumDQN:
         print(self.sess.run(w1_info))
         saver = tf.train.Saver()
         saver.save(self.sess, RLname)
+
+
+    def sample(self, state):
+        self.learn_step_counter += 1
+        # q_values = self.sess.run(self._q_values, {self._state: state})
+        #
+        # epsilon = self._epsilons[min(self._current_time_step, self._epsilon_decay_steps - 1)]
+        #
+        # e = random.random()
+        # if e < epsilon:
+        #     return random.randint(0, self._num_actions - 1)
+
+        return 0

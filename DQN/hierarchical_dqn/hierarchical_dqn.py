@@ -4,7 +4,9 @@ https://arxiv.org/pdf/1604.06057.pdf
 @author: Saurabh Kumar
 """
 
-from DQN.hierarchical_dqn.dqn import DqnAgent
+# from DQN.hierarchical_dqn.dqn import DqnAgent
+from DQN.RL_brain import SumDQN
+from DQN.my_env import Env
 import numpy as np
 
 
@@ -14,7 +16,7 @@ class HierarchicalDqnAgent(object):
     def __init__(self,
                  learning_rates=[0.1, 0.00025],
                  state_sizes=[0, 0],
-                 subgoals=None,
+                 subgoals=np.array([5,5],[7,7]),
                  num_subgoals=0,
                  num_primitive_actions=0,
                  meta_controller_state_fn=None,
@@ -40,16 +42,26 @@ class HierarchicalDqnAgent(object):
              meta_controller_state_fn：返回元控制器状态的函数。
              check_subgoal_fn：用于检查代理是否满足特定子目标的函数。
         """
+        env = Env()
+        self._meta_controller = SumDQN(env.n_actions, env.n_features,
+        learning_rate = learning_rates[0],
+        reward_decay = 0.9,
+        e_greedy = 0.9,
+        replace_target_iter = 200,
+        memory_size = 10000,
+        double_q = True,
+        prioritized = True,
+        dueling = True)
 
-        self._meta_controller = DqnAgent(state_dims=state_sizes[0],
-            num_actions=num_subgoals,
-            learning_rate=learning_rates[0],
-            epsilon_end=0.01)
-
-        self._controller = DqnAgent(learning_rate=learning_rates[1],
-                num_actions=num_primitive_actions,
-                state_dims=[state_sizes[1] + num_subgoals],
-                epsilon_end=0.01)
+        self._controller = SumDQN(env.n_actions, env.n_features,
+        learning_rate = learning_rates[1],
+        reward_decay = 0.9,
+        e_greedy = 0.9,
+        replace_target_iter = 200,
+        memory_size = 10000,
+        double_q = True,
+        prioritized = True,
+        dueling = True)
 
         self._subgoals = subgoals
         self._num_subgoals = num_subgoals
@@ -142,8 +154,8 @@ class HierarchicalDqnAgent(object):
 
         # Store the controller transition in memory.存储控制器传递
         # dqn里的store
-        self._controller.store(intrinsic_state, action,
-            intrinsic_reward, intrinsic_next_state, intrinsic_terminal, eval)
+        self._controller.store_transition(intrinsic_state, action,
+            intrinsic_reward, intrinsic_next_state)
 
         self._meta_controller_reward += reward
 
@@ -158,9 +170,8 @@ class HierarchicalDqnAgent(object):
             meta_controller_state = np.copy(self._meta_controller_state)
             next_meta_controller_state = np.copy(self.get_meta_controller_state(next_state))
             
-            self._meta_controller.store(meta_controller_state, self._curr_subgoal,
-                self._meta_controller_reward, next_meta_controller_state,
-                terminal, eval)
+            self._meta_controller.store_transition(meta_controller_state, self._curr_subgoal,
+                self._meta_controller_reward, next_meta_controller_state,)
 
             # 重新初始
             # Reset the current meta-controller state and current subgoal to be None
@@ -202,36 +213,36 @@ class HierarchicalDqnAgent(object):
 
         # 把当前位置和子目标同时考虑
         controller_state = self.get_controller_state(state, self._curr_subgoal)
-        action = self._controller.sample(controller_state)
+        action = self._controller.choose_action(controller_state)
 
         return action
 
-    def best_action(self, state):
-        """Returns the greedy action from the hierarchical DQN agent.
-           Gets the greedy subgoal if necessary from the meta-controller and gets
-           the greedy primitive action from the controller.
+    # def best_action(self, state):
+    #     """Returns the greedy action from the hierarchical DQN agent.
+    #        Gets the greedy subgoal if necessary from the meta-controller and gets
+    #        the greedy primitive action from the controller.
+    #
+    #        Args:
+    #         state: the current environment state.
+    #
+    #        Returns:
+    #         action: the controller's greedy primitive action.
+    #     """
+    #
+    #     # If the meta-controller state is None, it means that either this is a new episode
+    #     # or a subgoal has just been completed.
+    #     if self._meta_controller_state is None:
+    #         self._meta_controller_state = self.get_meta_controller_state(state)
+    #         self._curr_subgoal = self._meta_controller.best_action([self._meta_controller_state])
+    #
+    #     controller_state = self.get_controller_state(state, self._curr_subgoal)
+    #     action = self._controller.best_action(controller_state)
+    #     return action
 
-           Args:
-            state: the current environment state.
-
-           Returns:
-            action: the controller's greedy primitive action.
-        """
-
-        # If the meta-controller state is None, it means that either this is a new episode 
-        # or a subgoal has just been completed.
-        if self._meta_controller_state is None:
-            self._meta_controller_state = self.get_meta_controller_state(state)
-            self._curr_subgoal = self._meta_controller.best_action([self._meta_controller_state])
-
-        controller_state = self.get_controller_state(state, self._curr_subgoal)
-        action = self._controller.best_action(controller_state)
-        return action
-
-    def update(self):
-        self._controller.update()
-        # Only update meta-controller right after a meta-controller transition has taken place,
-        # which occurs only when either a subgoal has been completed or the agnent has reached a
-        # terminal state.
-        if self._meta_controller_state is None:
-            self._meta_controller.update()
+    # def update(self):
+    #     self._controller.update()
+    #     # Only update meta-controller right after a meta-controller transition has taken place,
+    #     # which occurs only when either a subgoal has been completed or the agnent has reached a
+    #     # terminal state.
+    #     if self._meta_controller_state is None:
+    #         self._meta_controller.update()
