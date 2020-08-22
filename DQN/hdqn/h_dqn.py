@@ -24,6 +24,8 @@ class HDqnAgent:
     ):
 
         self.subgoals = self.env.minRoadMaze
+        self.subgoals1=([0.25,0.25],[1.25,1.25])
+
         self.epsilon = 0.9,
         self.sess = None,
 
@@ -71,13 +73,22 @@ class HDqnAgent:
         sub_goal=np.array(sub_goal)
         return sub_goal
 
+    def get_subgoal1(self,observation):
+        if observation[0]<0.25 and observation[1]<0.25:
+            sub_goal=self.subgoals1[0]
+        elif observation[0]<1.25 and observation[1]<1.25:
+            sub_goal = self.subgoals1[1]
+        else :
+            sub_goal=[1.75,1.75]
+
+        sub_goal=np.array(sub_goal)
+        return sub_goal
 
 
     def check_get_subgoal(self,observation,sub_goal):
-        observation = observation[np.newaxis, :]
-        sub_goal= sub_goal[np.newaxis, :]
-        if observation[0].any()==sub_goal[0].any():
-            return True,
+
+        if observation[0]==sub_goal[0] and observation[1]==sub_goal[1]:
+            return True
         else:
             return False
 
@@ -92,8 +103,10 @@ class HDqnAgent:
     def meta_store_transition(self,s,sg,r,s_):
         self._meta_controller.Exh_store_transition(s,sg,r,s_)
 
-    def learn(self):
-        self._controller.learn()
+    def learn(self,sub_goal):
+        sub_goal=sub_goal[np.newaxis, :]
+        self._controller.learn(sub_goal)
 
-    def meta_learn(self):
-        self._meta_controller.learn()
+    def meta_learn(self,sub_goal):
+        sub_goal=sub_goal[np.newaxis, :]
+        self._meta_controller.meta_learn(sub_goal)

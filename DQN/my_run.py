@@ -23,8 +23,7 @@ def run_maze():
         #     env.resetPeople()
         while not done:
             #中层循环（选子目标）,写一个get_subgoal,传入参数当前位置observation，返回一个子目标的坐标
-            sub_goal=HDqnAgent.get_subgoal(observation)
-
+            sub_goal=HDqnAgent.get_subgoal1(observation)
 
             internal_step_counter = 1
 
@@ -41,11 +40,11 @@ def run_maze():
                 # RL take action and get next observation and reward,（这里应该返回internal_reward
                 observation_, internal_reward, done = env.step(action)
 
+
                 #判断是否到达子目标
                 goal_reach = HDqnAgent.check_get_subgoal(observation,sub_goal)
-                print(goal_reach)
-                # 加入一个到达子目标的奖励，增加内部奖励
 
+                # 加入一个到达子目标的奖励，增加内部奖励
 
                 #注意要开两个sumtree，把metacontroller的经验和controller的经验分开来存
                 #存经验要改：要加入subgoal作为参数，表示把智能体想到达这个subgoal而做的行动
@@ -54,8 +53,9 @@ def run_maze():
                 #同时训练高层和底层
                 if (step > 1000) and (step % 5 == 0):
                     #同时训练两个网络
-                    HDqnAgent.learn()
-                    HDqnAgent.meta_learn()
+                    HDqnAgent.learn(sub_goal)
+                if(step>50000) and (step%10==0):
+                    HDqnAgent.meta_learn(sub_goal)
 
                 # swap observation
                 observation = observation_
@@ -66,12 +66,13 @@ def run_maze():
                 #定义一个external_reward来接收每一次内部循环产生的internal_reward，用于外部的训练，（external_reward+=internal_reward）
                 external_reward += internal_reward
                 internal_step_counter += 1
-
+                print("sub_goal:", sub_goal, "goal_reach:", goal_reach, "internal_step_counter", internal_step_counter,
+                      "internal_reward:", internal_reward, "external_reward:", external_reward)
                 if goal_reach:
                     external_step_counter += internal_step_counter
                     internal_reward += 50
                     break
-                print(internal_step_counter)
+
             # 在中层循环写一个if done，用来跳出中层循环
             if done:
                 break

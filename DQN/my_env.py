@@ -230,7 +230,7 @@ class Env:
         #   n
 
         # 从position到observation_的坐标转换
-        observation_ = np.array([-0.5 + self.position[1] * 0.25, -0.5 + self.position[0] * 0.25])
+        observation_ = np.array([-0.5 + self.position[0] * 0.25, -0.5 + self.position[1] * 0.25])
         # if reward!=0:
         #     print(reward)
         return observation_, reward, done

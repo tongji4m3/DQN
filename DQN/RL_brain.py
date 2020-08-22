@@ -339,7 +339,7 @@ class SumDQN:
             sub_goal=[self.sub_goals[temp][0],self.sub_goals[temp][1]]
         return sub_goal
 
-    def learn(self):
+    def learn(self,sub_goal):
         if self.learn_step_counter % self.replace_target_iter == 0:
             self.sess.run(self.replace_target_op)
             print('\ntarget_params_replaced\n')
@@ -352,15 +352,16 @@ class SumDQN:
 
         q_next, q_eval4next = self.sess.run(
             [self.q_next, self.q_eval],
-            feed_dict={self.s_: batch_memory[:, -self.n_features:],  # next observation
+            feed_dict={self.s_: batch_memory[:, -self.n_features:],
+                       self.sg: batch_memory[:,self.n_features:self.n_features+2],
                        self.s: batch_memory[:, -self.n_features:]})  # next observation
-        q_eval = self.sess.run(self.q_eval, {self.s: batch_memory[:, :self.n_features]})
+        q_eval = self.sess.run(self.q_eval, {self.s: batch_memory[:, :self.n_features],self.sg:batch_memory[:,self.n_features:self.n_features+2]})
 
         q_target = q_eval.copy()
 
         batch_index = np.arange(self.batch_size, dtype=np.int32)
         eval_act_index = batch_memory[:, self.n_features].astype(int)
-        reward = batch_memory[:, self.n_features + 1]
+        reward = batch_memory[:, self.n_features + 3]
 
         if self.double_q:
             max_act4next = np.argmax(q_eval4next,
@@ -375,14 +376,70 @@ class SumDQN:
         if self.prioritized:
             _, abs_errors, self.cost = self.sess.run([self._train_op, self.abs_errors, self.loss],
                                                      feed_dict={self.s: batch_memory[:, :self.n_features],
+                                                                self.sg: batch_memory[:,self.n_features:self.n_features + 2],
                                                                 self.q_target: q_target,
                                                                 self.ISWeights: ISWeights})
             self.memory.batch_update(tree_idx, abs_errors)  # update priority
         else:
             _, self.cost = self.sess.run([self._train_op, self.loss],
                                          feed_dict={self.s: batch_memory[:, :self.n_features],
+                                                    self.sg: batch_memory[:, self.n_features:self.n_features + 2],
                                                     self.q_target: q_target})
 
+
+        self.cost_his.append(self.cost)
+
+        self.epsilon = self.epsilon + self.epsilon_increment if self.epsilon < self.epsilon_max else self.epsilon_max
+        self.learn_step_counter += 1
+
+    def meta_learn(self, sub_goal):
+        if self.learn_step_counter % self.replace_target_iter == 0:
+            self.sess.run(self.replace_target_op)
+            print('\ntarget_params_replaced\n')
+
+        if self.prioritized:
+            tree_idx, batch_memory, ISWeights = self.ex_memory.sample(self.batch_size)
+        else:
+            sample_index = np.random.choice(self.memory_size, size=self.batch_size)
+            batch_memory = self.ex_memory[sample_index, :]
+
+        q_next, q_eval4next = self.sess.run(
+            [self.q_next, self.q_eval],
+            feed_dict={self.s_: batch_memory[:, -self.n_features:],
+                       self.sg: batch_memory[:, self.n_features:self.n_features + 2],
+                       self.s: batch_memory[:, -self.n_features:]})  # next observation
+        q_eval = self.sess.run(self.q_eval, {self.s: batch_memory[:, :self.n_features],
+                                             self.sg: batch_memory[:, self.n_features:self.n_features + 2]})
+
+        q_target = q_eval.copy()
+
+        batch_index = np.arange(self.batch_size, dtype=np.int32)
+        eval_act_index = batch_memory[:, self.n_features].astype(int)
+        reward = batch_memory[:, self.n_features + 3]
+
+        if self.double_q:
+            max_act4next = np.argmax(q_eval4next,
+                                     axis=1)  # the action that brings the highest value is evaluated by q_eval
+            selected_q_next = q_next[batch_index, max_act4next]  # Double DQN, select q_next depending on above actions
+        else:
+            selected_q_next = np.max(q_next, axis=1)  # the natural DQN
+
+        q_target[batch_index, eval_act_index] = reward + self.gamma * selected_q_next
+
+        # change
+        if self.prioritized:
+            _, abs_errors, self.cost = self.sess.run([self._train_op, self.abs_errors, self.loss],
+                                                     feed_dict={self.s: batch_memory[:, :self.n_features],
+                                                                self.sg: batch_memory[:,
+                                                                         self.n_features:self.n_features + 2],
+                                                                self.q_target: q_target,
+                                                                self.ISWeights: ISWeights})
+            self.ex_memory.batch_update(tree_idx, abs_errors)  # update priority
+        else:
+            _, self.cost = self.sess.run([self._train_op, self.loss],
+                                         feed_dict={self.s: batch_memory[:, :self.n_features],
+                                                    self.sg: batch_memory[:, self.n_features:self.n_features + 2],
+                                                    self.q_target: q_target})
 
         self.cost_his.append(self.cost)
 
