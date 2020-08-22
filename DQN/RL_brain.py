@@ -125,6 +125,8 @@ class SumDQN:
             self,
             n_actions,
             n_features,
+            subgoals,
+            isMeta,
             learning_rate=0.001,
             reward_decay=0.95,
             e_greedy=0.9,
@@ -137,9 +139,12 @@ class SumDQN:
             prioritized=True,
             dueling=True,
             sess=None,
+            ex_sess=None,
     ):
         self.n_actions = n_actions
         self.n_features = n_features
+        self.sub_goals=subgoals
+        self.isMeta=isMeta
         self.lr = learning_rate
         self.gamma = reward_decay
         self.epsilon_max = e_greedy
@@ -162,16 +167,33 @@ class SumDQN:
         e_params = tf.get_collection('eval_net_params')
         self.replace_target_op = [tf.assign(t, e) for t, e in zip(t_params, e_params)]
 
+        #存储内部经验的memory
         if self.prioritized:
             self.memory = Memory(capacity=memory_size)
         else:
             self.memory = np.zeros((self.memory_size, n_features*2+2))
 
+
+        #存储外部经验的ex_memory
+        if self.prioritized:
+            self.ex_memory = Memory(capacity=memory_size)
+        else:
+            self.ex_memory = np.zeros((self.memory_size, n_features * 2 + 2))
+
+        #内层初始化值的会话
         if sess is None:
             self.sess = tf.Session()
             self.sess.run(tf.global_variables_initializer())
         else:
             self.sess = sess
+
+        #外层初始化值的会话：
+        if ex_sess is None:
+            self.ex_sess = tf.Session()
+            self.ex_sess.run(tf.global_variables_initializer())
+        else:
+            self.ex_sess = ex_sess
+
 
         if output_graph:
             tf.summary.FileWriter("logs/", self.sess.graph)
@@ -179,12 +201,15 @@ class SumDQN:
         self.cost_his = []
 
     def _build_net(self):
-        def build_layers(s, c_names, n_l1, w_initializer, b_initializer, trainable):
+        def build_layers(s,sg,c_names, n_l1, w_initializer, b_initializer, trainable):
             with tf.variable_scope('l1'):
                 w1 = tf.get_variable('w1',[self.n_features, n_l1], initializer=w_initializer, collections=c_names, trainable=trainable)
                 b1 = tf.get_variable('b1',[1, n_l1], initializer=b_initializer, collections=c_names,  trainable=trainable)
-                l1 = tf.nn.relu(tf.matmul(s, w1) + b1)
-
+                # l1 = tf.nn.relu(tf.matmul(s, w1) + b1)
+                if self.isMeta==False:
+                    l1 = tf.nn.relu(tf.matmul(s, w1) + b1)+tf.nn.relu(tf.matmul(sg,w1)+b1)#把子目标参数加入到网络中
+                else:
+                    l1 = tf.nn.relu(tf.matmul(s, w1) + b1)
             # change
             if self.dueling:
                 # Dueling DQN
@@ -210,6 +235,7 @@ class SumDQN:
 
         # ------------------ build evaluate_net ------------------
         self.s = tf.placeholder(tf.float32, [None, self.n_features], name='s')  # input
+        self.sg = tf.placeholder(tf.float32, [None, self.n_features], name='sg')#子目标参数
         self.q_target = tf.placeholder(tf.float32, [None, self.n_actions], name='Q_target')  # for calculating loss
         if self.prioritized:
             self.ISWeights = tf.placeholder(tf.float32, [None, 1], name='IS_weights')
@@ -217,8 +243,10 @@ class SumDQN:
             c_names, n_l1, w_initializer, b_initializer = \
                 ['eval_net_params', tf.GraphKeys.GLOBAL_VARIABLES], 20, \
                 tf.random_normal_initializer(0., 0.3), tf.constant_initializer(0.1)  # config of layers
+            #如果不是meta，就要初始化sg
 
-            self.q_eval = build_layers(self.s, c_names, n_l1, w_initializer, b_initializer, True)
+            self.q_eval = build_layers(self.s,self.sg, c_names, n_l1, w_initializer, b_initializer, True)
+
 
         with tf.variable_scope('loss'):
             if self.prioritized:
@@ -233,7 +261,10 @@ class SumDQN:
         self.s_ = tf.placeholder(tf.float32, [None, self.n_features], name='s_')    # input
         with tf.variable_scope('target_net'):
             c_names = ['target_net_params', tf.GraphKeys.GLOBAL_VARIABLES]
-            self.q_next = build_layers(self.s_, c_names, n_l1, w_initializer, b_initializer, False)
+            self.q_next = build_layers(self.s_,self.sg,c_names, n_l1, w_initializer, b_initializer, False)
+
+
+
 
     def store_transition(self, s, a, r, s_):
         if self.prioritized:    # prioritized replay
@@ -247,6 +278,32 @@ class SumDQN:
             self.memory[index, :] = transition
             self.memory_counter += 1
 
+    #hdqn的内层store_transition
+    def Inh_store_transition(self, s, sg,a, r, s_):
+        if self.prioritized:  # prioritized replay
+            transition = np.hstack((s, sg,[a, r], s_))
+            self.memory.store(transition)  # have high priority for newly arrived transition
+        else:  # random replay
+            if not hasattr(self, 'memory_counter'):
+                self.memory_counter = 0
+            transition = np.hstack((s, sg,[a, r], s_))
+            index = self.memory_counter % self.memory_size
+            self.memory[index, :] = transition
+            self.memory_counter += 1
+
+    #hdqn的外层store_transition
+    def Exh_store_transition(self, s, sg,r, s_):
+        if self.prioritized:  # prioritized replay
+            transition = np.hstack((s, sg,r, s_))
+            self.ex_memory.store(transition)  # have high priority for newly arrived transition
+        else:  # random replay
+            if not hasattr(self, 'ex_memory_counter'):
+                self.ex_memory_counter = 0
+            transition = np.hstack((s, sg, r, s_))
+            index = self.ex_memory_counter % self.memory_size
+            self.ex_memory[index, :] = transition
+            self.ex_memory_counter += 1
+
     def choose_action(self, observation):
         observation = observation[np.newaxis, :]
         if np.random.uniform() < self.epsilon:
@@ -255,6 +312,32 @@ class SumDQN:
         else:
             action = np.random.randint(0, self.n_actions)
         return action
+
+    #hdqn的choose_action
+    def h_choose_action(self,observation,sub_goal):
+
+        observation=observation[np.newaxis, :]
+
+        sub_goal=sub_goal[np.newaxis, :]
+        if np.random.uniform() < self.epsilon:
+            actions_value = self.sess.run(self.q_eval, feed_dict={self.s: observation,self.sg: sub_goal})
+            action = np.argmax(actions_value)
+        else:
+            action = np.random.randint(0, self.n_actions)
+        return action
+
+    #hdqn的choose_subgoal(根据经验选取子目标）
+    def choose_subgoal(self,observation):
+        observation = observation[np.newaxis, :]
+        temp_for_sg=observation
+        subgoal_value = self.ex_sess.run(self.q_eval, feed_dict={self.s: observation,self.sg:temp_for_sg})
+        if np.random.uniform() < self.epsilon:
+            temp= np.argmax(subgoal_value)
+            sub_goal = [self.sub_goals[temp][0], self.sub_goals[temp][1]]
+        else:
+            temp=np.random.randint(0,10)
+            sub_goal=[self.sub_goals[temp][0],self.sub_goals[temp][1]]
+        return sub_goal
 
     def learn(self):
         if self.learn_step_counter % self.replace_target_iter == 0:

@@ -22,13 +22,15 @@ class HDqnAgent:
             # meta_controller_state_fn=None,
             # check_subgoal_fn=None
     ):
-        self.subgoals = np.array([[3, 3], [5, 5], [7, 7]]),
-        self.num_subgoals = 0,
+
+        self.subgoals = self.env.minRoadMaze
         self.epsilon = 0.9,
         self.sess = None,
 
         self.env = Env()
         self._meta_controller = SumDQN(self.env.n_actions, self.env.n_features,
+                                       self.subgoals,
+                                       isMeta=True,
                                        learning_rate=0.1,
                                        reward_decay=0.9,
                                        e_greedy=0.9,
@@ -41,6 +43,8 @@ class HDqnAgent:
         tf.reset_default_graph()
 
         self._controller = SumDQN(self.env.n_actions, self.env.n_features,
+                                       self.subgoals,
+                                       isMeta=False,
                                        learning_rate=0.1,
                                        reward_decay=0.9,
                                        e_greedy=0.9,
@@ -52,7 +56,6 @@ class HDqnAgent:
 
         self._subgoals = self.subgoals
         self.subgoal=np.array([3,3])
-        self._num_subgoals = self.num_subgoals
         self.state=self.env.position
         self.terminal=np.array([9,9])
         self.epsilon=self.epsilon
@@ -62,40 +65,35 @@ class HDqnAgent:
             self.sess.run(tf.global_variables_initializer())
 
 
-    def get_subgoal(self):
-        self.state=self.env.position
-        if self.state[0]<3 or self.state[1]<3:
-            self.subgoal=self._subgoals[0]
+    def get_subgoal(self,observation):
+        sub_goal=self._meta_controller.choose_subgoal(observation)
 
-        elif self.state[0]>3 or self.state[1]>3:
-            self.subgoal=self._subgoals[1]
-        elif self.state[0]>5 or self.state[1]>5:
-            self.subgoal=self._subgoals[2]
+        sub_goal=np.array(sub_goal)
+        return sub_goal
+
+
+
+    def check_get_subgoal(self,observation,sub_goal):
+        observation = observation[np.newaxis, :]
+        sub_goal= sub_goal[np.newaxis, :]
+        if observation[0].any()==sub_goal[0].any():
+            return True,
         else:
-            self.subgoal=self.terminal
-
-        return self.subgoal
-
-    def up_reward(self,reward):
-        reward+=50
-        return reward
+            return False
 
 
-    def check_get_subgoal(self,state,reward):
-        if state[0]==self.subgoal[0]:
-            self.get_subgoal()
-            reward=self.up_reward(reward)
-            return True,reward
-        else:
-            return False,reward
-
-
-    def choose_action(self,observation):
-        action=self._controller.choose_action(observation)
+    def choose_action(self,observation,sub_goal):
+        action=self._controller.h_choose_action(observation,sub_goal)
         return action
 
-    def store_transition(self, s, a, r, s_):
-        self._controller.store_transition(s,a,r,s_)
+    def store_transition(self, s,sg,a, r, s_):
+        self._controller.Inh_store_transition(s,sg,a,r,s_)
+
+    def meta_store_transition(self,s,sg,r,s_):
+        self._meta_controller.Exh_store_transition(s,sg,r,s_)
 
     def learn(self):
         self._controller.learn()
+
+    def meta_learn(self):
+        self._meta_controller.learn()
