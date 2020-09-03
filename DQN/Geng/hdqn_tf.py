@@ -265,7 +265,7 @@ class HDQN_TF:
                     transition = np.hstack((np.squeeze(experience.state), np.squeeze(experience.goal),
                                             [experience.action, experience.reward], np.squeeze(experience.next_state),
                                             np.squeeze(experience.goal)))
-                index = self.emory_counter % self.memory_size
+                index = self.memory_counter % self.memory_size
                 self.memory[index, :] = transition
                 self.memory_counter += 1
 

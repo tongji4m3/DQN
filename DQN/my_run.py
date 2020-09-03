@@ -66,8 +66,8 @@ def run_maze():
                 #定义一个external_reward来接收每一次内部循环产生的internal_reward，用于外部的训练，（external_reward+=internal_reward）
                 external_reward += internal_reward
                 internal_step_counter += 1
-                print("sub_goal:", sub_goal, "goal_reach:", goal_reach, "internal_step_counter", internal_step_counter,
-                      "internal_reward:", internal_reward, "external_reward:", external_reward)
+                # print("sub_goal:", sub_goal, "goal_reach:", goal_reach, "internal_step_counter", internal_step_counter,
+                #       "internal_reward:", internal_reward, "external_reward:", external_reward)
                 if goal_reach:
                     external_step_counter += internal_step_counter
                     internal_reward += 50

@@ -126,8 +126,8 @@ class SumDQN:
             n_actions,
             n_features,
             subgoals,
-            isMeta,
-            learning_rate=0.001,
+            learning_rate_h=0.1,
+            learning_rate_l=0.00025,
             reward_decay=0.95,
             e_greedy=0.9,
             replace_target_iter=500,
@@ -144,8 +144,7 @@ class SumDQN:
         self.n_actions = n_actions
         self.n_features = n_features
         self.sub_goals=subgoals
-        self.isMeta=isMeta
-        self.lr = learning_rate
+        self.n_goals=5
         self.gamma = reward_decay
         self.epsilon_max = e_greedy
         self.replace_target_iter = replace_target_iter
@@ -153,6 +152,9 @@ class SumDQN:
         self.batch_size = batch_size
         self.epsilon_increment = e_greedy_increment
         self.epsilon = 0 if e_greedy_increment is not None else self.epsilon_max
+
+        self.lr_h = learning_rate_h
+        self.lr_l = learning_rate_l
 
         self.double_q = double_q  # decide to use double q or not
         self.prioritized = prioritized
@@ -163,6 +165,10 @@ class SumDQN:
         self._q_values=0
 
         self._build_net()
+        self._build_meta_net()
+
+
+
         t_params = tf.get_collection('target_net_params')
         e_params = tf.get_collection('eval_net_params')
         self.replace_target_op = [tf.assign(t, e) for t, e in zip(t_params, e_params)]
@@ -201,15 +207,15 @@ class SumDQN:
         self.cost_his = []
 
     def _build_net(self):
-        def build_layers(s,sg,c_names, n_l1, w_initializer, b_initializer, trainable):
+        def build_layers(s,c_names, n_l1, w_initializer, b_initializer, trainable):
             with tf.variable_scope('l1'):
                 w1 = tf.get_variable('w1',[self.n_features, n_l1], initializer=w_initializer, collections=c_names, trainable=trainable)
                 b1 = tf.get_variable('b1',[1, n_l1], initializer=b_initializer, collections=c_names,  trainable=trainable)
-                # l1 = tf.nn.relu(tf.matmul(s, w1) + b1)
-                if self.isMeta==False:
-                    l1 = tf.nn.relu(tf.matmul(s, w1) + b1)+tf.nn.relu(tf.matmul(sg,w1)+b1)#把子目标参数加入到网络中
-                else:
-                    l1 = tf.nn.relu(tf.matmul(s, w1) + b1)
+                l1 = tf.nn.relu(tf.matmul(s, w1) + b1)
+                # if self.isMeta==False:
+                #     l1 = tf.nn.relu(tf.matmul(s, w1) + b1)+tf.nn.relu(tf.matmul(sg,w1)+b1)#把子目标参数加入到网络中
+                # else:
+                #     l1 = tf.nn.relu(tf.matmul(s, w1) + b1)
             # change
             if self.dueling:
                 # Dueling DQN
@@ -235,7 +241,6 @@ class SumDQN:
 
         # ------------------ build evaluate_net ------------------
         self.s = tf.placeholder(tf.float32, [None, self.n_features], name='s')  # input
-        self.sg = tf.placeholder(tf.float32, [None, self.n_features], name='sg')#子目标参数
         self.q_target = tf.placeholder(tf.float32, [None, self.n_actions], name='Q_target')  # for calculating loss
         if self.prioritized:
             self.ISWeights = tf.placeholder(tf.float32, [None, 1], name='IS_weights')
@@ -245,7 +250,7 @@ class SumDQN:
                 tf.random_normal_initializer(0., 0.3), tf.constant_initializer(0.1)  # config of layers
             #如果不是meta，就要初始化sg
 
-            self.q_eval = build_layers(self.s,self.sg, c_names, n_l1, w_initializer, b_initializer, True)
+            self.q_eval = build_layers(self.s, c_names, n_l1, w_initializer, b_initializer, True)
 
 
         with tf.variable_scope('loss'):
@@ -255,14 +260,72 @@ class SumDQN:
             else:
                 self.loss = tf.reduce_mean(tf.squared_difference(self.q_target, self.q_eval))
         with tf.variable_scope('train'):
-            self._train_op = tf.train.RMSPropOptimizer(self.lr).minimize(self.loss)
+            self._train_op = tf.train.RMSPropOptimizer(self.lr_l).minimize(self.loss)
 
         # ------------------ build target_net ------------------
         self.s_ = tf.placeholder(tf.float32, [None, self.n_features], name='s_')    # input
         with tf.variable_scope('target_net'):
             c_names = ['target_net_params', tf.GraphKeys.GLOBAL_VARIABLES]
-            self.q_next = build_layers(self.s_,self.sg,c_names, n_l1, w_initializer, b_initializer, False)
+            self.q_next = build_layers(self.s_, c_names, n_l1, w_initializer, b_initializer, False)
 
+
+
+
+
+
+
+    def _build_meta_net(self):
+        def build_meta_layers(s_meta,sg,c_names_meta, n_l1_meta, w_initializer, b_initializer, trainable):
+            with tf.variable_scope('meta_l1'):
+                w1 = tf.get_variable('meta_w1', [self.n_features, n_l1_meta], initializer=w_initializer, collections=c_names_meta, trainable=trainable)
+                b1 = tf.get_variable('meta_b1', [1, n_l1_meta], initializer=b_initializer, collections=c_names_meta, trainable=trainable)
+                # l1 = tf.nn.relu(tf.matmul(s_meta, w1) + b1)
+                l1 = tf.nn.relu(tf.matmul(s_meta, w1) + b1) + tf.nn.relu(tf.matmul(sg, w1) + b1)
+            if self.dueling: # Dueling DQN
+                with tf.variable_scope('meta_Value'):
+                    w2 = tf.get_variable('meta_w2', [n_l1_meta, 1], initializer=w_initializer, collections=c_names_meta, trainable=trainable)
+                    b2 = tf.get_variable('meta_b2', [1, 1], initializer=b_initializer, collections=c_names_meta, trainable=trainable)
+                    self.V = tf.matmul(l1, w2) + b2
+
+                with tf.variable_scope('meta_Advantage'):
+                    w2 = tf.get_variable('meta_w2', [n_l1_meta, self.n_goals], initializer=w_initializer, collections=c_names_meta, trainable=trainable)
+                    b2 = tf.get_variable('meta_b2', [1, self.n_goals], initializer=b_initializer, collections=c_names_meta, trainable=trainable)
+                    self.A = tf.matmul(l1, w2) + b2
+
+                with tf.variable_scope('meta_Q'):
+                    out = self.V + (self.A - tf.reduce_mean(self.A, axis=1, keep_dims=True))     # Q = V(s) + A(s,a)
+            else:
+                with tf.variable_scope('meta_Q'):
+                    w2 = tf.get_variable('meta_w2', [n_l1_meta, self.n_goals], initializer=w_initializer, collections=c_names_meta, trainable=trainable)
+                    b2 = tf.get_variable('meta_b2', [1, self.n_goals], initializer=b_initializer, collections=c_names_meta, trainable=trainable)
+                    out = tf.matmul(l1, w2) + b2
+            return out
+
+        # ------------------ 高层估计网络 Meta Evaluate Net ------------------
+        self.s_meta = tf.placeholder(tf.float32, [None, self.n_features], name='s_meta')  # 当前状态
+        self.sg = tf.placeholder(tf.float32, [None, self.n_features], name='sg')  # 子目标参数
+        self.q_target_meta = tf.placeholder(tf.float32, [None, self.n_goals], name='Q_target_meta')  # Q-真实值
+        if self.prioritized:
+            self.ISWeights_meta = tf.placeholder(tf.float32, [None, 1], name='IS_weights_meta')
+        with tf.variable_scope('meta_eval_net'):
+            c_names_meta, n_l1_meta, w_initializer, b_initializer = ['meta_eval_net_params', tf.GraphKeys.GLOBAL_VARIABLES], 20, \
+                                                          tf.random_normal_initializer(0., 0.3), tf.constant_initializer(0.1)  # config of layers
+            self.q_eval_meta = build_meta_layers(self.s_meta,self.sg,c_names_meta, n_l1_meta, w_initializer, b_initializer, True)  # 由网络得出Q-预测值
+
+        with tf.variable_scope('meta_loss'):
+            if self.prioritized:
+                self.abs_errors_meta = tf.reduce_sum(tf.abs(self.q_target_meta - self.q_eval_meta), axis=1)
+                self.loss_meta = tf.reduce_mean(self.ISWeights_meta * tf.squared_difference(self.q_target_meta, self.q_eval_meta))
+            else:
+                self.loss_meta = tf.reduce_mean(tf.squared_difference(self.q_target_meta, self.q_eval_meta))
+        with tf.variable_scope('meta_train'):
+            self._train_op_meta = tf.train.RMSPropOptimizer(self.lr_h).minimize(self.loss_meta)
+
+        # ------------------ 高层目标网络 Meta Target Net ------------------
+        self.s_meta_ = tf.placeholder(tf.float32, [None, self.n_features], name='s_meta_')  # 下一状态的值
+        with tf.variable_scope('meta_target_net'):
+            c_names_meta = ['meta_target_net_params', tf.GraphKeys.GLOBAL_VARIABLES]
+            self.q_next_meta = build_meta_layers(self.s_meta_,self.sg,c_names_meta, n_l1_meta, w_initializer, b_initializer, False)  # 由网络得出的下一时刻的Q-预测值
 
 
 

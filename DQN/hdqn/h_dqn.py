@@ -30,10 +30,10 @@ class HDqnAgent:
         self.sess = None,
 
         self.env = Env()
-        self._meta_controller = SumDQN(self.env.n_actions, self.env.n_features,
+        self.controller = SumDQN(self.env.n_actions, self.env.n_features,
                                        self.subgoals,
-                                       isMeta=True,
-                                       learning_rate=0.1,
+                                       learning_rate_h=0.1,
+                                       learning_rate_l=0.0025,
                                        reward_decay=0.9,
                                        e_greedy=0.9,
                                        replace_target_iter=200,
@@ -44,17 +44,17 @@ class HDqnAgent:
 
         tf.reset_default_graph()
 
-        self._controller = SumDQN(self.env.n_actions, self.env.n_features,
-                                       self.subgoals,
-                                       isMeta=False,
-                                       learning_rate=0.1,
-                                       reward_decay=0.9,
-                                       e_greedy=0.9,
-                                       replace_target_iter=200,
-                                       memory_size=10000,
-                                       double_q=True,
-                                       prioritized=True,
-                                       dueling=True)
+        # self._controller = SumDQN(self.env.n_actions, self.env.n_features,
+        #                                self.subgoals,
+        #                                isMeta=False,
+        #                                learning_rate=0.1,
+        #                                reward_decay=0.9,
+        #                                e_greedy=0.9,
+        #                                replace_target_iter=200,
+        #                                memory_size=10000,
+        #                                double_q=True,
+        #                                prioritized=True,
+        #                                dueling=True)
 
         self._subgoals = self.subgoals
         self.subgoal=np.array([3,3])
@@ -68,8 +68,8 @@ class HDqnAgent:
 
 
     def get_subgoal(self,observation):
-        sub_goal=self._meta_controller.choose_subgoal(observation)
-
+        # sub_goal=self._meta_controller.choose_subgoal(observation)
+        sub_goal = self.controller.choose_subgoal(observation)
         sub_goal=np.array(sub_goal)
         return sub_goal
 
@@ -94,19 +94,21 @@ class HDqnAgent:
 
 
     def choose_action(self,observation,sub_goal):
-        action=self._controller.h_choose_action(observation,sub_goal)
+        # action=self._controller.h_choose_action(observation,sub_goal)
+        action = self.controller.h_choose_action(observation, sub_goal)
+
         return action
 
     def store_transition(self, s,sg,a, r, s_):
-        self._controller.Inh_store_transition(s,sg,a,r,s_)
+        self.controller.Inh_store_transition(s,sg,a,r,s_)
 
     def meta_store_transition(self,s,sg,r,s_):
-        self._meta_controller.Exh_store_transition(s,sg,r,s_)
+        self.controller.Exh_store_transition(s,sg,r,s_)
 
     def learn(self,sub_goal):
         sub_goal=sub_goal[np.newaxis, :]
-        self._controller.learn(sub_goal)
+        self.controller.learn(sub_goal)
 
     def meta_learn(self,sub_goal):
         sub_goal=sub_goal[np.newaxis, :]
-        self._meta_controller.meta_learn(sub_goal)
+        self.controller.meta_learn(sub_goal)
