@@ -6,6 +6,7 @@ import DQN.utils.matrix as mt
 
 class Env:
     def __init__(self):
+        self.flag=2   #判断是否要更改地图
         self.mt1=mt.Matrix()#导入图类
         self.n_actions = 4  # 共有四个动作:上下左右 0132
         self.n_features = 2  # 二维的
@@ -117,14 +118,44 @@ class Env:
         #     speed = 0.1
         return speed
 
-    def update_env(self, episode, step_counter, done, reward):
+    def update_env(self, episode, step_counter, done, reward , sub_goal,epoch):
         # print(self.position[0],self.position[1])
+        if epoch>50: return
+        if self.flag>=1:
+            # np.array([-0.5 + self.position[0] * 0.25, -0.5 + self.position[1] * 0.25])
+            sub_goal=(sub_goal+0.5)/0.25
+
+            temp=self.distinction.getVertex(sub_goal[0]*self.n+sub_goal[1])
+            eList=temp.getConnections()
+            for e in eList:
+
+                temp1=temp.getWeight(e)
+                if temp1 > 1:
+                    temp1 = temp.getWeight(e)*0.96
+                    self.distinction.addEdge(temp.id, e.id, temp1)
+                else:
+                    self.distinction.addEdge(temp.id, e.id, temp1*0.99)
+
+                ex_List=e.getConnections()
+                for ex in ex_List:
+                    temp2=e.getWeight(ex)
+                    print(temp2)
+                    if temp2 > 1:
+
+                        self.distinction.addEdge(e.id, ex.id, temp2*0.96)
+                    else:
+                        self.distinction.addEdge(e.id, ex.id, temp1*0.99)
+
+            if self.flag>0:
+               self.flag-=1
+
+
 
         if done:
             interaction = 'Episode %s: total_steps = %s' % (episode + 1, step_counter)
             print('\r{}'.format(interaction), '')
             print('\r                           ', '')
-
+            self.flag=1
             # time.sleep(self.fresh_time)
             # print(self.people)
 

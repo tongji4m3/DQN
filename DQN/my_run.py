@@ -40,7 +40,7 @@ def run_maze():
                 # RL take action and get next observation and reward,（这里应该返回internal_reward
                 observation_, internal_reward, done = env.step(action)
 
-
+                # print(internal_reward)
                 #判断是否到达子目标
                 goal_reach = HDqnAgent.check_get_subgoal(observation,sub_goal)
 
@@ -54,14 +54,17 @@ def run_maze():
                 if (step > 1000) and (step % 5 == 0):
                     #同时训练两个网络
                     HDqnAgent.learn(sub_goal)
-                if(step>50000) and (step%10==0):
+                if(step>5000) and (step%10==0):
                     HDqnAgent.meta_learn(sub_goal)
 
+
+                # print(observation)
                 # swap observation
-                observation = observation_
+                observation =observation_
+                print(observation)
 
                 #定义两个step_counter，分别用于到达子目标的步数计数和外部的计数
-                env.update_env(episode, internal_step_counter,done,internal_reward)
+                env.update_env(episode, internal_step_counter,done,internal_reward,sub_goal,episode)
 
                 #定义一个external_reward来接收每一次内部循环产生的internal_reward，用于外部的训练，（external_reward+=internal_reward）
                 external_reward += internal_reward
