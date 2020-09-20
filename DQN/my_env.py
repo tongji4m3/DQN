@@ -120,34 +120,34 @@ class Env:
 
     def update_env(self, episode, step_counter, done, reward , sub_goal,epoch):
         # print(self.position[0],self.position[1])
-        if epoch>50: return
-        if self.flag>=1:
-            # np.array([-0.5 + self.position[0] * 0.25, -0.5 + self.position[1] * 0.25])
-            sub_goal=(sub_goal+0.5)/0.25
-
-            temp=self.distinction.getVertex(sub_goal[0]*self.n+sub_goal[1])
-            eList=temp.getConnections()
-            for e in eList:
-
-                temp1=temp.getWeight(e)
-                if temp1 > 1:
-                    temp1 = temp.getWeight(e)*0.96
-                    self.distinction.addEdge(temp.id, e.id, temp1)
-                else:
-                    self.distinction.addEdge(temp.id, e.id, temp1*0.99)
-
-                ex_List=e.getConnections()
-                for ex in ex_List:
-                    temp2=e.getWeight(ex)
-                    print(temp2)
-                    if temp2 > 1:
-
-                        self.distinction.addEdge(e.id, ex.id, temp2*0.96)
-                    else:
-                        self.distinction.addEdge(e.id, ex.id, temp1*0.99)
-
-            if self.flag>0:
-               self.flag-=1
+        # if epoch>50: return
+        # if self.flag>=1:
+        #     # np.array([-0.5 + self.position[0] * 0.25, -0.5 + self.position[1] * 0.25])
+        #     sub_goal=(sub_goal+0.5)/0.25
+        #
+        #     temp=self.distinction.getVertex(sub_goal[0]*self.n+sub_goal[1])
+        #     eList=temp.getConnections()
+        #     for e in eList:
+        #
+        #         temp1=temp.getWeight(e)
+        #         if temp1 > 1:
+        #             temp1 = temp.getWeight(e)*0.96
+        #             self.distinction.addEdge(temp.id, e.id, temp1)
+        #         else:
+        #             self.distinction.addEdge(temp.id, e.id, temp1*0.99)
+        #
+        #         ex_List=e.getConnections()
+        #         for ex in ex_List:
+        #             temp2=e.getWeight(ex)
+        #             print(temp2)
+        #             if temp2 > 1:
+        #
+        #                 self.distinction.addEdge(e.id, ex.id, temp2*0.96)
+        #             else:
+        #                 self.distinction.addEdge(e.id, ex.id, temp1*0.99)
+        #
+        #     if self.flag>0:
+        #        self.flag-=1
 
 
 
@@ -175,6 +175,7 @@ class Env:
                 # print(temp_x, temp_y)
                 # reward现在拟化为时间，公式为:reward=-1*(路径距离/人流量值对应速度）
                 temp = -1 * (self.distinction.getTwoPointsEdge(temp_x,temp_y)/ self.get_speed(self.people.getTwoPointsEdge(temp_x,temp_y)))
+
                 # temp = -1 * (self.distinction_weight * self.distinction[temp_x][temp_y] + self.people_weight *
                 #              self.people[temp_x][temp_y])
 
@@ -184,7 +185,16 @@ class Env:
             # print(minRoadReward)
         return minRoadReward
 
-    def step(self, action):
+    def judge(self,sub_goal,observation,observation_next):
+        distinction=pow((sub_goal[0]-observation[0]),2)+pow((sub_goal[1]-observation[1]),2)
+        distinction1=pow((sub_goal[0]-observation_next[0]),2)+pow((sub_goal[1]-observation_next[1]),2)
+
+        print(distinction,distinction1)
+
+        return (distinction-distinction1)*0.05
+
+
+    def step(self, action,sub_goal):
         # 0 上   1 下  3 左  2 右
         # 注意左右的定义不同
         # 根据动作,更新当前的位置 并且注意越界问题
@@ -205,13 +215,20 @@ class Env:
             if self.position[1] < self.n - 1:
                 self.position[1] += 1
 
+
+
         # 根据情况判断获得的奖励 以及是否结束
         if self.maze[self.position[0]][self.position[1]] == 1:
             transformed_position_x = pre_position_x * self.n + pre_position_y
             transformed_position_y = self.position[0] * self.n + self.position[1]
             # reward=-1*A*当前距离+B*人流量
             # reward现在拟化为时间，公式为:reward=-1*(路径距离/人流量值对应速度）
-            reward = -1 * (self.distinction.getTwoPointsEdge(transformed_position_x,transformed_position_y)/ self.get_speed(self.people.getTwoPointsEdge(transformed_position_x,transformed_position_y)))
+
+            observation = [pre_position_x, pre_position_y]
+            observation_next = [self.position[0], self.position[1]]
+
+            reward = -1 * (self.distinction.getTwoPointsEdge(transformed_position_x,transformed_position_y)/ self.get_speed(self.people.getTwoPointsEdge(transformed_position_x,transformed_position_y)))+self.judge(sub_goal,observation,observation_next)
+            print("reward1", self.judge(sub_goal, observation, observation_next), "reward2", reward)
             # reward = -1 * (self.distinction[transformed_position_x][
             #                    transformed_position_y] / self.get_speed(self.people[transformed_position_x][
             #                                                                 transformed_position_y]))
@@ -230,9 +247,16 @@ class Env:
             transformed_position_y = self.position[0] * self.n + self.position[1]
             # print(pre_position_x,pre_position_y,self.position[0],self.position[1])
             # reward现在拟化为时间，公式为:reward=-1*(路径距离/人流量值对应速度）
+
+            observation = [pre_position_x, pre_position_y]
+            observation_next = [self.position[0], self.position[1]]
+
             reward = -1 * (self.distinction.getTwoPointsEdge(transformed_position_x,
                                                              transformed_position_y) / self.get_speed(
-                self.people.getTwoPointsEdge(transformed_position_x, transformed_position_y)))
+                self.people.getTwoPointsEdge(transformed_position_x, transformed_position_y)))+self.judge(sub_goal,observation,observation_next)
+
+            print("reward1",self.judge(sub_goal,observation,observation_next),"reward2",reward)
+
             # reward = -1 * (self.distinction[transformed_position_x][
             #                    transformed_position_y] / self.get_speed(self.people[transformed_position_x][
             #                                                                 transformed_position_y]))

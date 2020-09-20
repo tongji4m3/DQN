@@ -38,7 +38,7 @@ def run_maze():
                 action = HDqnAgent.choose_action(observation,sub_goal)
                 step+=1
                 # RL take action and get next observation and reward,（这里应该返回internal_reward
-                observation_, internal_reward, done = env.step(action)
+                observation_, internal_reward, done = env.step(action,sub_goal)
 
                 # print(internal_reward)
                 #判断是否到达子目标
@@ -61,7 +61,7 @@ def run_maze():
                 # print(observation)
                 # swap observation
                 observation =observation_
-                print(observation)
+                print((observation+0.5)/0.25)
 
                 #定义两个step_counter，分别用于到达子目标的步数计数和外部的计数
                 env.update_env(episode, internal_step_counter,done,internal_reward,sub_goal,episode)

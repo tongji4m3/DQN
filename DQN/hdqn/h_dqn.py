@@ -24,7 +24,7 @@ class HDqnAgent:
     ):
 
         self.subgoals = self.env.minRoadMaze
-        self.subgoals1=([0.25,0.25],[1.25,1.25])
+        self.subgoals1=([0.75,0.25],[1.5,1.25])
 
         self.epsilon = 0.9,
         self.sess = None,
