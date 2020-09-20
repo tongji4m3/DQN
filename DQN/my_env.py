@@ -202,18 +202,32 @@ class Env:
         # self.maze[self.position[0]][self.position[1]]=0
         pre_position_x = self.position[0]
         pre_position_y = self.position[1]
+
+
         if action == 0:
             if self.position[0] > 0:
-                self.position[0] -= 1
+                self.position[0] -= 1 #左
+            else:
+
+                return np.array([-0.5+pre_position_x*0.25,-0.5+pre_position_y*0.25]), np.float(-1000), False
         elif action == 1:
             if self.position[0] < self.m - 1:
-                self.position[0] += 1
+                self.position[0] += 1 #右
+            else:
+
+                return np.array([-0.5+pre_position_x*0.25,-0.5+pre_position_y*0.25]), np.float(-1000), False
         elif action == 3:
             if self.position[1] > 0:
-                self.position[1] -= 1
+                self.position[1] -= 1 #上
+            else:
+
+                return np.array([-0.5+pre_position_x*0.25,-0.5+pre_position_y*0.25]), np.float(-1000), False
         elif action == 2:
             if self.position[1] < self.n - 1:
-                self.position[1] += 1
+                self.position[1] += 1 #下
+            else:
+
+                return np.array([-0.5+pre_position_x*0.25,-0.5+pre_position_y*0.25]), np.float(-1000), False
 
 
 
@@ -286,6 +300,7 @@ class Env:
 
         # 从position到observation_的坐标转换
         observation_ = np.array([-0.5 + self.position[0] * 0.25, -0.5 + self.position[1] * 0.25])
+        print((observation_))
         # if reward!=0:
         #     print(reward)
         return observation_, reward, done

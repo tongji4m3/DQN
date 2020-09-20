@@ -3,6 +3,8 @@ from DQN.RL_brain import SumDQN
 from DQN.hdqn.h_dqn import HDqnAgent
 import tensorflow as tf
 import numpy as np
+import time
+
 def run_maze():
     step = 0#用来控制什么时候开始训练
     reward_sum=0#每十回合统计的奖励
@@ -10,6 +12,8 @@ def run_maze():
 
 
     for episode in range(1001):
+
+        time.sleep(2)
         # initial observation
         observation = env.reset()
 

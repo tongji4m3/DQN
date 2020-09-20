@@ -97,7 +97,10 @@ class Memory(object):  # stored as ( s, a, r, s_ ) in SumTree
         self.tree.add(max_p, transition)   # set the max p for new p
 
     def sample(self, n):
+        # print(self.tree.data[0].size)
         b_idx, b_memory, ISWeights = np.empty((n,), dtype=np.int32), np.empty((n, self.tree.data[0].size)), np.empty((n, 1))
+        # b_idx, b_memory, ISWeights = np.empty((n,), dtype=np.int32), np.empty((n, 8)), np.empty(
+        #     (n, 1))
         pri_seg = self.tree.total_p / n       # priority segment
         self.beta = np.min([1., self.beta + self.beta_increment_per_sampling])  # max = 1
 
@@ -376,15 +379,41 @@ class SumDQN:
             action = np.random.randint(0, self.n_actions)
         return action
 
+    def change_point(self,observation,actions_values):
+        observation=(observation+0.5)/0.25
+        print(observation)
+        print(actions_values)
+        if observation[0]==0:
+            actions_values[0][0]=np.float(-10)
+            print(type(actions_values[0][0]))
+        if observation[0]==9:
+            actions_values[0][1]=-10
+        if observation[1]==0:
+            actions_values[0][3]=-10
+        if observation[1]==9:
+            actions_values[0][2]=-10
+
+        print(observation)
+        print(actions_values)
+        return actions_values
+
+
     #hdqn的choose_action
     def h_choose_action(self,observation,sub_goal):
+
+        observation_temp = observation
 
         observation=observation[np.newaxis, :]
 
         sub_goal=sub_goal[np.newaxis, :]
         if np.random.uniform() < self.epsilon:
             actions_value = self.sess.run(self.q_eval, feed_dict={self.s: observation,self.sg: sub_goal})
+
+            print(actions_value)
+            # actions_value=self.change_point(observation_temp,actions_value)
+
             action = np.argmax(actions_value)
+
         else:
             action = np.random.randint(0, self.n_actions)
         return action
