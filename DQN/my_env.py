@@ -73,49 +73,57 @@ class Env:
         #         [9, 9],
         #     ]
         # )
-        # self.minRoadMaze_n = self.minRoadMaze.shape[0]
+        self.minRoadMaze_n = self.minRoadMaze.shape[0]
 
-        self.minRoadMaze_n = 10
 
     # 重新初始化位置参数
     def reset(self):
         self.position = np.array([0, 0])  # 起始位置
 
-        self.maze=self.mt1.get_maze()
+        self.maze = np.array(
+            [
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 1]
+            ]
+        )
 
         return np.array([-0.5, -0.5])  # observation采取的坐标不太一样
 
     def resetPeople(self):
-        a = random.uniform(0.95, 1.05)
+
+        a = random.uniform(0.95, 1.06)
         N = self.m * self.n
-        for i in range(self.people.size):
-            s = self.people.getVertex(i)
-            eList = s.getConnections()
-            for e in eList:
-                x = random.randint(0, 4) - 2
-                temp = self.people.getTwoPointsEdge(s.id, e.id) * a + x
-                print(temp)
+        for i in self.people.vertList():
+            for j in i.connectedTo():
+                x = random.randint(0, 5) - 2
+                temp = self.people.getTwoPointsEdge(i,j) * a + x
                 if temp > 0:
-                    self.people.addEdge(s.id,e.id,temp)
+                    self.people.modifyEdge(i, j, temp)
                 else:
-                    self.people.addEdge(s.id, e.id, 0)
+                    self.people.modifyEdge(i, j, 0)
 
     def get_speed(self, people):
-        speed=5
-        if (people>=0) and (people<10):
-            speed=8
-        elif (people>=10) and (people<20):
-            speed=5
-        elif (people >= 20) and (people < 30):
-            speed = 3
-        elif (people>=30) and (people<=50):
-            speed=1
-        elif (people>50):
-            speed=0.1
-
-        # speed = (200 - people) * 0.5
-        # if speed <= 0:
-        #     speed = 0.1
+        # speed=2
+        # if (people>=5) and (people<7):
+        #     speed=3
+        # elif (people>=7) and (people<9):
+        #     speed=2
+        # elif (people>=9) and (people<=10):
+        #     speed=1
+        # elif (people>10):
+        #     speed=0.1
+        # return speed
+        speed = (100 - people) * 0.5
+        if speed <= 0:
+            speed = 0.1
         return speed
 
     def update_env(self, episode, step_counter, done, reward , sub_goal,epoch):
@@ -174,8 +182,12 @@ class Env:
                 temp_y = self.minRoadMaze[i + 1][0] * self.n + self.minRoadMaze[i + 1][1]
                 # print(temp_x, temp_y)
                 # reward现在拟化为时间，公式为:reward=-1*(路径距离/人流量值对应速度）
+<<<<<<< HEAD
                 temp = -1 * (self.distinction.getTwoPointsEdge(temp_x,temp_y)/ self.get_speed(self.people.getTwoPointsEdge(temp_x,temp_y)))
 
+=======
+                temp = -1 * (self.distinction[temp_x][temp_y] / self.get_speed(self.people[temp_x][temp_y]))
+>>>>>>> parent of 3d1d6da... 完成了邻接表的导入
                 # temp = -1 * (self.distinction_weight * self.distinction[temp_x][temp_y] + self.people_weight *
                 #              self.people[temp_x][temp_y])
 
@@ -221,6 +233,7 @@ class Env:
         if self.maze[self.position[0]][self.position[1]] == 1:
             transformed_position_x = pre_position_x * self.n + pre_position_y
             transformed_position_y = self.position[0] * self.n + self.position[1]
+            print(pre_position_x, pre_position_y, self.position[0], self.position[1])
             # reward=-1*A*当前距离+B*人流量
             # reward现在拟化为时间，公式为:reward=-1*(路径距离/人流量值对应速度）
 
@@ -268,10 +281,10 @@ class Env:
             done = False
 
 
-            # print("reward:",reward)
-            # print("self.distinction:",self.distinction[transformed_position_x][transformed_position_y])
-            # print("self.get_speed:",self.get_speed(self.people[transformed_position_x][transformed_position_y]))
-            # print()
+            print("reward:",reward)
+            print("self.distinction:",self.distinction[transformed_position_x][transformed_position_y])
+            print("self.get_speed:",self.get_speed(self.people[transformed_position_x][transformed_position_y]))
+            print()
 
 
 
