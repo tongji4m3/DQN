@@ -94,4 +94,13 @@ class Matrix:
             minRoadMaze[w][0] = paths[w] // self.n
             minRoadMaze[w][1] = paths[w] % self.n
 
-        print(minRoadMaze)
+        # 对最短路径上的点人为设置拥堵路段
+        for i in range(len(minRoadMaze)):
+            # 对最短路径每隔三个十字路口次设置一次拥堵点
+            if i % 3 == 0 and i + 1 < len(minRoadMaze):
+                v = minRoadMaze[i][0] * self.n + minRoadMaze[i][1]
+                w = minRoadMaze[i + 1][0] * self.n + minRoadMaze[i + 1][1]
+                self.people.addEdge(v, w, random.randint(0, 100) + 50)
+
+        return minRoadMaze
+        # print(minRoadMaze)
