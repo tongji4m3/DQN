@@ -68,6 +68,7 @@ class Graph(object):
         cost=start.getWeight(end)
         return cost
 
+
     #添加顶点
     def addVertex(self,key):
         newVertex = Vertex(key)  # 创建顶点
