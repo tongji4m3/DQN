@@ -1468,3 +1468,35 @@ class Env:
         # plt.ylabel('Avg Steps')
         # plt.xlabel('Iterations')
         # plt.show()
+
+
+    def get_subPoint(self):
+        rad=3
+        point_list=[]
+        # 初步选点
+        for x in range(rad+1):
+            for y in range(rad+1):
+                if x*x+y*y<=(rad+1)*(rad+1) and x*x+y*y>(rad-1)*(rad-1):
+                    point_list.append((x,y))
+
+        print(point_list)
+        # 后续选点会用到
+        transformed_position_x = 0
+        transformed_position_y = self.position[0] * self.n + self.position[1]
+        average_distinction=0
+        count=0
+
+        # 找出0，0到集合中可达的点
+        for index in point_list:
+            transformed_position_y=index[0]*self.n+index[1]
+
+            if self.distinction.getTwoPointsEdge(transformed_position_x,transformed_position_y)==-1:
+                point_list.pop(count)
+                count-=1
+                continue
+            average_distinction+=self.distinction.getTwoPointsEdge(transformed_position_x,transformed_position_y)
+            print(average_distinction)
+            count+=1
+        print(point_list)
+        average_distinction = average_distinction/len(point_list)
+        # 得到的point_list就是子目标集合。

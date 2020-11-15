@@ -4,7 +4,6 @@ import tensorflow as tf
 np.random.seed(1)
 tf.set_random_seed(1)
 
-
 class SumTree(object):
     """
     This SumTree code is a modified version and the original code is from:
@@ -138,6 +137,7 @@ class SumDQN:
             dueling=True,
             sess=None,
     ):
+        tf.reset_default_graph()
         self.n_actions = n_actions
         self.n_features = n_features
         self.lr = learning_rate
