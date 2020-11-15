@@ -3,6 +3,7 @@ from DQN.RL_brain import SumDQN
 import tensorflow as tf
 
 def run_maze():
+    env.get_subPoint()
     step = 0
     reward_sum=0#每十回合统计的奖励
     step_sum=0#每十回合统计的步数
@@ -18,8 +19,21 @@ def run_maze():
 
         step_counter = 1
         while True:
+
+            RL = SumDQN(env.n_actions, env.n_features,
+                        learning_rate=0.01,
+                        reward_decay=0.9,
+                        e_greedy=0.9,
+                        replace_target_iter=200,
+                        memory_size=10000,
+                        double_q=True,
+                        prioritized=True,
+                        dueling=True
+                        # output_graph=True
+                        )
             # RL choose action based on observation
             action = RL.choose_action(observation)
+
 
             # RL take action and get next observation and reward
             observation_, reward, done = env.step(action)
